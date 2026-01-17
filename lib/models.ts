@@ -27,3 +27,16 @@ export type Brand = keyof typeof brandModels;
 export function getModelsByBrand(brand: Brand) {
   return [...brandModels[brand]].sort(naturalSort);
 }
+
+export function parseVehicleName(vehicleName: string) {
+  for (const brand of BRANDS) {
+    const prefix = `${brand} `;
+    if (vehicleName.startsWith(prefix)) {
+      const model = vehicleName.slice(prefix.length).trim();
+      if (model) {
+        return { brand, model };
+      }
+    }
+  }
+  return null;
+}

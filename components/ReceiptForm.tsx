@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { BRANDS, type Brand, getModelsByBrand } from '@/lib/models';
+import { useEffect, useRef, useState } from 'react';
+import { BRANDS, type Brand, getModelsByBrand, parseVehicleName } from '@/lib/models';
+import { normalizeVehicleNumber } from '@/lib/normalizeVehicleNumber';
 
 const initialState = {
   vehicleNumber: '',
@@ -17,10 +18,13 @@ export default function ReceiptForm() {
   const [form, setForm] = useState(initialState);
   const [brand, setBrand] = useState<Brand>('ZT');
   const [model, setModel] = useState('');
+  const [autoFillEnabled, setAutoFillEnabled] = useState(true);
+  const [autoFillMessage, setAutoFillMessage] = useState<string | null>(null);
   const [vinImage, setVinImage] = useState<File | null>(null);
   const [engineImage, setEngineImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const lookupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const models = getModelsByBrand(brand);
   const vehicleName = model ? `${brand} ${model}` : '';
@@ -78,7 +82,7 @@ export default function ReceiptForm() {
     setModel('');
     setVinImage(null);
     setEngineImage(null);
-    setMessage('접수 등록이 완료되었습니다.');
+    setMessage('접수 등록이 완료되었습니다. 고객/차량 정보가 최신으로 저장되었습니다.');
   };
 
   const handleDrop =
@@ -94,8 +98,77 @@ export default function ReceiptForm() {
     event.preventDefault();
   };
 
+  useEffect(() => {
+    if (!autoFillEnabled) {
+      return;
+    }
+
+    if (lookupTimeoutRef.current) {
+      clearTimeout(lookupTimeoutRef.current);
+    }
+
+    const normalized = normalizeVehicleNumber(form.vehicleNumber);
+    if (normalized.length < 4) {
+      setAutoFillMessage(null);
+      return;
+    }
+
+    lookupTimeoutRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/receipts/lookup?vehicle_number=${encodeURIComponent(form.vehicleNumber)}`
+        );
+        const result = await response.json();
+
+        if (!response.ok || !result.found) {
+          setAutoFillMessage(null);
+          return;
+        }
+
+        setForm((prev) => ({
+          ...prev,
+          customerName: prev.customerName || result.data.customer_name || '',
+          phone: prev.phone || result.data.phone || '',
+          purchaseDate: prev.purchaseDate || result.data.purchase_date || '',
+          mileageKm:
+            prev.mileageKm || (result.data.mileage_km !== null ? String(result.data.mileage_km) : '')
+        }));
+
+        if (!model && result.data.vehicle_name) {
+          const parsed = parseVehicleName(result.data.vehicle_name);
+          if (parsed) {
+            setBrand(parsed.brand);
+            setModel(parsed.model);
+          }
+        }
+
+        setAutoFillMessage('기존 차량 정보가 자동으로 채워졌습니다.');
+      } catch (error) {
+        setAutoFillMessage(null);
+      }
+    }, 600);
+
+    return () => {
+      if (lookupTimeoutRef.current) {
+        clearTimeout(lookupTimeoutRef.current);
+      }
+    };
+  }, [autoFillEnabled, form.vehicleNumber, model]);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <span>차량번호 자동 채움</span>
+        <button
+          type="button"
+          onClick={() => setAutoFillEnabled((prev) => !prev)}
+          className={`rounded-full px-3 py-1 text-xs font-medium ${
+            autoFillEnabled ? 'bg-slate-900 text-white' : 'bg-white text-slate-500'
+          }`}
+        >
+          {autoFillEnabled ? 'ON' : 'OFF'}
+        </button>
+      </div>
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           차량 정보
@@ -270,6 +343,7 @@ export default function ReceiptForm() {
         </label>
       </div>
 
+      {autoFillMessage && <p className="text-xs text-emerald-600">{autoFillMessage}</p>}
       {message && <p className="text-sm text-emerald-600">{message}</p>}
 
       <button

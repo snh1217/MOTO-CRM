@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { phoneRegex, validateRequired } from '@/lib/validation';
 import { requireAdmin } from '@/lib/admin';
+import { normalizeVehicleNumber } from '@/lib/normalizeVehicleNumber';
 
 const BUCKET = process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'vin-engine';
 
@@ -72,6 +73,8 @@ export async function POST(request: NextRequest) {
     const vinUrl = supabaseServer.storage.from(BUCKET).getPublicUrl(vinPath).data.publicUrl;
     const engineUrl = supabaseServer.storage.from(BUCKET).getPublicUrl(enginePath).data.publicUrl;
 
+    const vehicleNumberNorm = normalizeVehicleNumber(vehicleNumber);
+
     const { data, error } = await supabaseServer
       .from('receipts')
       .insert({
@@ -93,7 +96,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: `저장 실패: ${error.message}` }, { status: 500 });
     }
 
-    return NextResponse.json({ message: '접수가 등록되었습니다.', data });
+    const { error: profileError } = await supabaseServer
+      .from('vehicle_profiles')
+      .upsert(
+        {
+          vehicle_number_norm: vehicleNumberNorm,
+          vehicle_number_raw: vehicleNumber,
+          vehicle_name: vehicleName,
+          mileage_km: mileageKm,
+          customer_name: customerName,
+          phone,
+          purchase_date: purchaseDate,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: 'vehicle_number_norm' }
+      );
+
+    if (profileError) {
+      return NextResponse.json(
+        { message: `프로필 최신화 실패: ${profileError.message}` },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      message: '접수가 등록되었습니다. 고객/차량 정보가 최신으로 저장되었습니다.',
+      data
+    });
   } catch (error) {
     return NextResponse.json({ message: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
