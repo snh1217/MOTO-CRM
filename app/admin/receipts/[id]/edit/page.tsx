@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 import DebugPanel, { type DebugLogEntry } from '@/components/DebugPanel';
 import {
@@ -36,7 +36,7 @@ type SubmitStage = 'idle' | 'vin' | 'engine' | 'db' | 'done' | 'error';
 export default function ReceiptEditPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [form, setForm] = useState({
     vehicleNumber: '',
@@ -70,7 +70,11 @@ export default function ReceiptEditPage() {
   const vehicleName = model ? `${brand} ${model}` : '';
   const inputClassName =
     'h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200';
-  const showDebugPanel = useMemo(() => searchParams.get('debug') === '1', [searchParams]);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setShowDebugPanel(params.get('debug') === '1');
+  }, []);
 
   const addLog = (stage: string, messageText: string) => {
     const time = new Date().toLocaleTimeString('ko-KR');

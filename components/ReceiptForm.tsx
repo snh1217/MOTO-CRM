@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import {
   BRANDS,
   type Brand,
@@ -46,7 +45,7 @@ export default function ReceiptForm() {
   const [logs, setLogs] = useState<DebugLogEntry[]>([]);
   const lookupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stageTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const searchParams = useSearchParams();
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   const models =
     brand === 'ZT'
@@ -58,7 +57,11 @@ export default function ReceiptForm() {
   const inputClassName =
     'h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200';
 
-  const showDebugPanel = useMemo(() => searchParams.get('debug') === '1', [searchParams]);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setShowDebugPanel(params.get('debug') === '1');
+  }, []);
 
   const addLog = (stage: string, messageText: string) => {
     const time = new Date().toLocaleTimeString('ko-KR');
