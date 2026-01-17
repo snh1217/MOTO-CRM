@@ -111,7 +111,8 @@ create policy "public insert inquiries" on inquiries
 1. GitHub 저장소 연결
 2. 환경 변수 등록 (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, ADMIN_CODE, SESSION_SECRET)
 3. `npm run build` 후 배포 완료
-4. 필요 시 Vercel Project Settings > Security에서 보호된 환경 변수 설정
+4. Root Directory는 `package.json`이 위치한 저장소 루트로 설정
+5. 필요 시 Vercel Project Settings > Security에서 보호된 환경 변수 설정
 
 ## CORS/모바일 앱 확장
 
