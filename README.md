@@ -49,6 +49,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 ADMIN_CODE=motostar
 SESSION_SECRET=...
+SUPABASE_VIN_ENGINE_BUCKET=vin-engine
 ```
 
 ## Supabase SQL 스키마
@@ -95,7 +96,7 @@ create policy "public insert inquiries" on inquiries
 
 ## Storage 가이드
 
-- 버킷명: `vin-engine`
+- 버킷명: `vin-engine` (또는 `SUPABASE_VIN_ENGINE_BUCKET` 값)
 - 공개 버킷으로 설정 (public)
 - 업로드 경로는 랜덤 UUID 기반으로 저장
 - 버킷 정책 예시: `storage.objects` 테이블에서 public 읽기를 허용하거나, 서비스 롤 키로만 쓰기 수행

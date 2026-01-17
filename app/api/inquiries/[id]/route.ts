@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { supabaseServer } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin';
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
@@ -12,6 +12,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   const body = await request.json();
   const contacted = Boolean(body.contacted);
 
+  const supabaseServer = getSupabaseServer();
   const { data, error } = await supabaseServer
     .from('inquiries')
     .update({ contacted })

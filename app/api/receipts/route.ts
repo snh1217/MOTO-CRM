@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { supabaseServer } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase';
 import { phoneRegex, validateRequired } from '@/lib/validation';
 import { requireAdmin } from '@/lib/admin';
 
-const BUCKET = 'vin-engine';
+const BUCKET = process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'vin-engine';
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
     const vinPath = `${crypto.randomUUID()}-${vinImage.name}`;
     const enginePath = `${crypto.randomUUID()}-${engineImage.name}`;
 
+    const supabaseServer = getSupabaseServer();
     const vinUpload = await supabaseServer.storage.from(BUCKET).upload(vinPath, vinImage, {
       contentType: vinImage.type
     });
@@ -104,6 +105,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: '인증 필요' }, { status: 401 });
   }
 
+  const supabaseServer = getSupabaseServer();
   const { data, error } = await supabaseServer
     .from('receipts')
     .select('*')

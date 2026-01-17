@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { supabaseServer } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase';
 import { phoneRegex, validateRequired } from '@/lib/validation';
 import { requireAdmin } from '@/lib/admin';
 
@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: '전화번호 형식이 올바르지 않습니다.' }, { status: 400 });
     }
 
+    const supabaseServer = getSupabaseServer();
     const { data, error } = await supabaseServer
       .from('inquiries')
       .insert({
@@ -52,6 +53,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: '인증 필요' }, { status: 401 });
   }
 
+  const supabaseServer = getSupabaseServer();
   const { data, error } = await supabaseServer
     .from('inquiries')
     .select('*')

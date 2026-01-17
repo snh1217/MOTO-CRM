@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import ExcelJS from 'exceljs';
-import { supabaseServer } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin';
+
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   const isAdmin = await requireAdmin(request);
@@ -10,6 +12,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: '인증 필요' }, { status: 401 });
   }
 
+  const supabaseServer = getSupabaseServer();
   const { data, error } = await supabaseServer
     .from('receipts')
     .select('*')
