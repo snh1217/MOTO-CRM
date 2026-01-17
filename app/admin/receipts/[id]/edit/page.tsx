@@ -4,7 +4,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Nav from '@/components/Nav';
 import DebugPanel, { type DebugLogEntry } from '@/components/DebugPanel';
-import { BRANDS, type Brand, getModelsByBrand, parseVehicleName } from '@/lib/models';
+import {
+  BRANDS,
+  type Brand,
+  getModelsByBrand,
+  getZtModelsByType,
+  parseVehicleName,
+  resolveZtType,
+  type ZtType,
+  ZT_TYPES
+} from '@/lib/models';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 
 interface Receipt {
@@ -44,6 +53,7 @@ export default function ReceiptEditPage() {
   const [engineImage, setEngineImage] = useState<File | null>(null);
   const [deleteVin, setDeleteVin] = useState(false);
   const [deleteEngine, setDeleteEngine] = useState(false);
+  const [ztType, setZtType] = useState<ZtType | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitStage, setSubmitStage] = useState<SubmitStage>('idle');
   const [message, setMessage] = useState<string | null>(null);
@@ -51,7 +61,12 @@ export default function ReceiptEditPage() {
   const [logs, setLogs] = useState<DebugLogEntry[]>([]);
   const stageTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const models = getModelsByBrand(brand);
+  const models =
+    brand === 'ZT'
+      ? ztType
+        ? getZtModelsByType(ztType)
+        : []
+      : getModelsByBrand(brand);
   const vehicleName = model ? `${brand} ${model}` : '';
   const inputClassName =
     'h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200';
@@ -118,7 +133,16 @@ export default function ReceiptEditPage() {
       const parsed = parseVehicleName(data.vehicle_name);
       if (parsed) {
         setBrand(parsed.brand);
-        setModel(parsed.model);
+        if (parsed.brand === 'ZT') {
+          const resolvedType = resolveZtType(parsed.model);
+          if (resolvedType) {
+            setZtType(resolvedType);
+            setModel(parsed.model);
+          }
+        } else {
+          setZtType(null);
+          setModel(parsed.model);
+        }
       }
     };
 
@@ -266,10 +290,11 @@ export default function ReceiptEditPage() {
                   <button
                     key={brandOption}
                     type="button"
-                    onClick={() => {
-                      setBrand(brandOption);
-                      setModel('');
-                    }}
+                  onClick={() => {
+                    setBrand(brandOption);
+                    setZtType(null);
+                    setModel('');
+                  }}
                     className={`rounded-full px-4 py-2 text-sm font-medium ${
                       brand === brandOption
                         ? 'bg-slate-900 text-white'
@@ -280,6 +305,27 @@ export default function ReceiptEditPage() {
                   </button>
                 ))}
               </div>
+              {brand === 'ZT' && (
+                <div className="flex flex-wrap gap-2">
+                  {ZT_TYPES.map((option) => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => {
+                        setZtType(option.key);
+                        setModel('');
+                      }}
+                      className={`rounded-full px-4 py-2 text-sm font-medium ${
+                        ztType === option.key
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
               <label className="flex flex-col gap-1 text-sm">
                 모델 선택 (필수)
                 <select
@@ -287,8 +333,11 @@ export default function ReceiptEditPage() {
                   value={model}
                   onChange={(event) => setModel(event.target.value)}
                   required
+                  disabled={brand === 'ZT' && !ztType}
                 >
-                  <option value="">모델을 선택하세요</option>
+                  <option value="">
+                    {brand === 'ZT' && !ztType ? '차종을 먼저 선택하세요' : '모델을 선택하세요'}
+                  </option>
                   {models.map((item) => (
                     <option key={item} value={item}>
                       {item}
