@@ -46,6 +46,11 @@ export default function InquiriesAdminPage() {
     }
   };
 
+  const handleExitAdmin = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    router.replace('/admin');
+  };
+
   return (
     <main className="space-y-6">
       <Nav />
@@ -55,12 +60,21 @@ export default function InquiriesAdminPage() {
             <h2 className="text-lg font-semibold">문의 내역</h2>
             <p className="text-sm text-slate-500">총 {inquiries.length}건</p>
           </div>
-          <a
-            href="/api/inquiries/export"
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
-          >
-            엑셀 다운로드
-          </a>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="/api/inquiries/export"
+              className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
+            >
+              엑셀 다운로드
+            </a>
+            <button
+              type="button"
+              onClick={handleExitAdmin}
+              className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600"
+            >
+              관리자 모드 해제
+            </button>
+          </div>
         </div>
 
         {loading ? (

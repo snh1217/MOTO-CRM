@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 const links = [
   { href: '/', label: '접수 등록' },
@@ -12,41 +12,28 @@ const links = [
 
 export default function Nav() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    await fetch('/api/admin/logout', { method: 'POST' });
-    router.replace('/');
-  };
 
   return (
-    <header className="mb-6 flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+    <header className="mb-5 flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm">
       <div>
         <h1 className="text-xl font-semibold">MOTO-CRM</h1>
-        <p className="text-sm text-slate-500">접수/문의 관리 시스템</p>
+        <p className="text-xs text-slate-500">접수/문의 관리 시스템</p>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
+      <nav className="flex gap-2 overflow-x-auto text-sm">
         {links.map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className={`text-sm font-medium ${
+            className={`whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium ${
               pathname === link.href
-                ? 'text-slate-900'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-slate-900 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
             {link.label}
           </Link>
         ))}
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="rounded-md border border-slate-200 px-3 py-1 text-sm text-slate-600 hover:border-slate-300"
-        >
-          로그아웃
-        </button>
-      </div>
+      </nav>
     </header>
   );
 }

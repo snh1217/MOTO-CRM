@@ -51,6 +51,11 @@ export default function ReceiptsAdminPage() {
     );
   }, [query, receipts]);
 
+  const handleExitAdmin = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    router.replace('/admin');
+  };
+
   return (
     <main className="space-y-6">
       <Nav />
@@ -73,6 +78,13 @@ export default function ReceiptsAdminPage() {
             >
               엑셀 다운로드
             </a>
+            <button
+              type="button"
+              onClick={handleExitAdmin}
+              className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600"
+            >
+              관리자 모드 해제
+            </button>
           </div>
         </div>
 
