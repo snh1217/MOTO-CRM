@@ -1,12 +1,13 @@
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin';
+import { createRequestId, jsonErrorResponse, jsonResponse, serializeSupabaseError } from '@/lib/apiUtils';
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  const requestId = createRequestId();
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return NextResponse.json({ message: '인증 필요' }, { status: 401 });
+    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
   }
 
   const body = await request.json();
@@ -21,8 +22,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     .single();
 
   if (error) {
-    return NextResponse.json({ message: `업데이트 실패: ${error.message}` }, { status: 500 });
+    console.error(`[inquiries][PATCH] requestId=${requestId} error`, error);
+    return jsonErrorResponse(
+      '업데이트 실패',
+      requestId,
+      { status: 500 },
+      serializeSupabaseError(error)
+    );
   }
 
-  return NextResponse.json({ message: '업데이트 완료', data });
+  return jsonResponse({ message: '업데이트 완료', data }, { status: 200 }, requestId);
 }

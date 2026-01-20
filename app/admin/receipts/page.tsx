@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 
@@ -10,13 +11,13 @@ interface Receipt {
   vehicle_name: string;
   vehicle_number: string;
   mileage_km: number;
-  customer_name: string;
-  phone: string;
-  purchase_date: string;
-  vin_image_url: string;
-  engine_image_url: string;
-  symptom: string;
-  service_detail: string;
+  customer_name: string | null;
+  phone: string | null;
+  purchase_date: string | null;
+  vin_image_url: string | null;
+  engine_image_url: string | null;
+  symptom: string | null;
+  service_detail: string | null;
 }
 
 export default function ReceiptsAdminPage() {
@@ -45,7 +46,7 @@ export default function ReceiptsAdminPage() {
     const q = query.toLowerCase();
     return receipts.filter(
       (receipt) =>
-        receipt.customer_name.toLowerCase().includes(q) ||
+        (receipt.customer_name ?? '').toLowerCase().includes(q) ||
         receipt.vehicle_number.toLowerCase().includes(q) ||
         receipt.vehicle_name.toLowerCase().includes(q)
     );
@@ -100,6 +101,7 @@ export default function ReceiptsAdminPage() {
                   <th className="py-2 pr-4">차량번호</th>
                   <th className="py-2 pr-4">고객명</th>
                   <th className="py-2 pr-4">전화번호</th>
+                  <th className="py-2 pr-4">작업</th>
                 </tr>
               </thead>
               <tbody>
@@ -114,8 +116,17 @@ export default function ReceiptsAdminPage() {
                     </td>
                     <td className="py-2 pr-4">{receipt.vehicle_name}</td>
                     <td className="py-2 pr-4">{receipt.vehicle_number}</td>
-                    <td className="py-2 pr-4">{receipt.customer_name}</td>
-                    <td className="py-2 pr-4">{receipt.phone}</td>
+                    <td className="py-2 pr-4">{receipt.customer_name || '-'}</td>
+                    <td className="py-2 pr-4">{receipt.phone || '-'}</td>
+                    <td className="py-2 pr-4">
+                      <Link
+                        href={`/admin/receipts/${receipt.id}/edit`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-slate-300"
+                      >
+                        수정
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -156,40 +167,52 @@ export default function ReceiptsAdminPage() {
             </div>
             <div>
               <p className="text-xs text-slate-500">고객명</p>
-              <p className="text-sm">{selected.customer_name}</p>
+              <p className="text-sm">{selected.customer_name || '-'}</p>
             </div>
             <div>
               <p className="text-xs text-slate-500">전화번호</p>
-              <p className="text-sm">{selected.phone}</p>
+              <p className="text-sm">{selected.phone || '-'}</p>
             </div>
             <div>
               <p className="text-xs text-slate-500">구입일자</p>
-              <p className="text-sm">{selected.purchase_date}</p>
+              <p className="text-sm">{selected.purchase_date || '-'}</p>
             </div>
             <div className="md:col-span-2">
               <p className="text-xs text-slate-500">증상</p>
-              <p className="text-sm">{selected.symptom}</p>
+              <p className="text-sm">{selected.symptom || '-'}</p>
             </div>
             <div className="md:col-span-2">
               <p className="text-xs text-slate-500">정비내용</p>
-              <p className="text-sm">{selected.service_detail}</p>
+              <p className="text-sm">{selected.service_detail || '-'}</p>
             </div>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <a
-              href={selected.vin_image_url}
-              target="_blank"
-              className="rounded-lg border border-slate-200 p-3 text-sm"
-            >
-              차대번호 사진 보기
-            </a>
-            <a
-              href={selected.engine_image_url}
-              target="_blank"
-              className="rounded-lg border border-slate-200 p-3 text-sm"
-            >
-              엔진번호 사진 보기
-            </a>
+            {selected.vin_image_url ? (
+              <a
+                href={selected.vin_image_url}
+                target="_blank"
+                className="rounded-lg border border-slate-200 p-3 text-sm"
+              >
+                차대번호 사진 보기
+              </a>
+            ) : (
+              <div className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-400">
+                차대번호 사진 없음
+              </div>
+            )}
+            {selected.engine_image_url ? (
+              <a
+                href={selected.engine_image_url}
+                target="_blank"
+                className="rounded-lg border border-slate-200 p-3 text-sm"
+              >
+                엔진번호 사진 보기
+              </a>
+            ) : (
+              <div className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-400">
+                엔진번호 사진 없음
+              </div>
+            )}
           </div>
         </section>
       )}

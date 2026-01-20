@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import ExcelJS from 'exceljs';
 import { getSupabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin';
-
-export const runtime = 'nodejs';
+import { createRequestId, jsonErrorResponse, serializeSupabaseError } from '@/lib/apiUtils';
 
 export async function GET(request: NextRequest) {
+  const requestId = createRequestId();
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return NextResponse.json({ message: '인증 필요' }, { status: 401 });
+    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
   }
 
   const supabaseServer = getSupabaseServer();
@@ -19,7 +18,13 @@ export async function GET(request: NextRequest) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    return NextResponse.json({ message: `엑셀 생성 실패: ${error.message}` }, { status: 500 });
+    console.error(`[inquiries][EXPORT] requestId=${requestId} error`, error);
+    return jsonErrorResponse(
+      '엑셀 생성 실패',
+      requestId,
+      { status: 500 },
+      serializeSupabaseError(error)
+    );
   }
 
   const workbook = new ExcelJS.Workbook();
@@ -42,11 +47,11 @@ export async function GET(request: NextRequest) {
   });
 
   const buffer = await workbook.xlsx.writeBuffer();
-  return new NextResponse(buffer, {
+  return new Response(buffer, {
     headers: {
-      'Content-Type':
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': 'attachment; filename="inquiries.xlsx"'
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename="inquiries.xlsx"',
+      'x-request-id': requestId
     }
   });
 }

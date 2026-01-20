@@ -38,7 +38,7 @@ export default function InquiryForm() {
     setLoading(false);
 
     if (!response.ok) {
-      setMessage(result.message || '문의 등록에 실패했습니다.');
+      setMessage(result.error || result.message || '문의 등록에 실패했습니다.');
       return;
     }
 

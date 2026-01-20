@@ -61,13 +61,13 @@ create table if not exists receipts (
   vehicle_name text not null,
   vehicle_number text not null,
   mileage_km integer not null,
-  customer_name text not null,
-  phone text not null,
-  purchase_date date not null,
-  vin_image_url text not null,
-  engine_image_url text not null,
-  symptom text not null,
-  service_detail text not null
+  customer_name text,
+  phone text,
+  purchase_date date,
+  vin_image_url text,
+  engine_image_url text,
+  symptom text,
+  service_detail text
 );
 
 create table if not exists inquiries (
@@ -78,6 +78,35 @@ create table if not exists inquiries (
   content text not null,
   contacted boolean not null default false
 );
+
+create table if not exists vehicle_profiles (
+  vehicle_number_norm text primary key,
+  vehicle_number_raw text not null,
+  vehicle_name text not null,
+  mileage_km integer,
+  customer_name text,
+  phone text,
+  purchase_date date,
+  updated_at timestamptz not null default now()
+);
+```
+
+### 필수/선택 컬럼 변경 SQL
+
+```sql
+alter table receipts
+  alter column customer_name drop not null,
+  alter column phone drop not null,
+  alter column purchase_date drop not null,
+  alter column vin_image_url drop not null,
+  alter column engine_image_url drop not null,
+  alter column symptom drop not null,
+  alter column service_detail drop not null;
+
+alter table vehicle_profiles
+  alter column customer_name drop not null,
+  alter column phone drop not null,
+  alter column purchase_date drop not null;
 ```
 
 ## RLS 예시 (선택)
@@ -117,3 +146,21 @@ create policy "public insert inquiries" on inquiries
 ## CORS/모바일 앱 확장
 
 모바일 앱에서 API를 호출할 경우, 필요한 도메인에 대해 `Access-Control-Allow-Origin` 헤더를 추가하도록 API Route Handler에 확장 가능합니다. 기본적으로 동일 도메인 호출을 가정합니다.
+
+## 오류/로그 확인 가이드
+
+### Vercel Logs 확인
+1. Vercel Dashboard → Project → Deployments 선택
+2. 문제가 발생한 배포 클릭
+3. `Functions` 또는 `Logs` 탭에서 `requestId`로 검색
+
+### 로컬 확인
+```bash
+npm run dev
+```
+- 브라우저 DevTools → Network/Console에서 API 실패 응답 확인
+- 응답 본문에 `requestId`가 포함되어 있으며, 서버 로그와 함께 추적 가능합니다.
+
+### Supabase 확인
+- Database → Logs에서 API 오류 확인
+- Storage 업로드 실패 시 버킷 권한/정책(RLS, public 설정)을 점검하세요.

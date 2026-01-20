@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
 import { clearAdminCookie } from '@/lib/auth';
+import { createRequestId, jsonResponse } from '@/lib/apiUtils';
 
 export async function POST() {
-  const response = NextResponse.json({ message: '로그아웃되었습니다.' });
+  const requestId = createRequestId();
+  const response = jsonResponse({ message: '로그아웃되었습니다.' }, { status: 200 }, requestId);
   response.cookies.set(clearAdminCookie());
   return response;
 }

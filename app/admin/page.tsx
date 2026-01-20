@@ -25,7 +25,7 @@ export default function AdminLoginPage() {
     setLoading(false);
 
     if (!response.ok) {
-      setMessage(result.message || '인증에 실패했습니다.');
+      setMessage(result.error || result.message || '인증에 실패했습니다.');
       return;
     }
 

@@ -1,21 +1,27 @@
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { buildAdminCookie, signAdminToken } from '@/lib/auth';
+import { createRequestId, jsonErrorResponse, jsonResponse } from '@/lib/apiUtils';
 
 export async function POST(request: NextRequest) {
-  const { code } = await request.json();
-  const adminCode = process.env.ADMIN_CODE;
+  const requestId = createRequestId();
+  try {
+    const { code } = await request.json();
+    const adminCode = process.env.ADMIN_CODE;
 
-  if (!adminCode) {
-    return NextResponse.json({ message: 'ADMIN_CODE is not set' }, { status: 500 });
+    if (!adminCode) {
+      return jsonErrorResponse('ADMIN_CODE is not set', requestId, { status: 500 });
+    }
+
+    if (!code || code !== adminCode) {
+      return jsonErrorResponse('코드가 올바르지 않습니다.', requestId, { status: 401 });
+    }
+
+    const token = await signAdminToken();
+    const response = jsonResponse({ message: '인증되었습니다.' }, { status: 200 }, requestId);
+    response.cookies.set(buildAdminCookie(token));
+    return response;
+  } catch (error) {
+    console.error(`[admin][AUTH] requestId=${requestId} error`, error);
+    return jsonErrorResponse('서버 오류가 발생했습니다.', requestId, { status: 500 });
   }
-
-  if (!code || code !== adminCode) {
-    return NextResponse.json({ message: '코드가 올바르지 않습니다.' }, { status: 401 });
-  }
-
-  const token = await signAdminToken();
-  const response = NextResponse.json({ message: '인증되었습니다.' });
-  response.cookies.set(buildAdminCookie(token));
-  return response;
 }
