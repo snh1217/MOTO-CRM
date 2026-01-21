@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
+import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 
 interface Inquiry {
   id: string;
@@ -11,6 +12,8 @@ interface Inquiry {
   phone: string;
   content: string;
   contacted: boolean;
+  note?: string | null;
+  note_updated_at?: string | null;
 }
 
 function normalizePhoneNumber(phone: string) {
@@ -23,6 +26,12 @@ export default function InquiriesAdminPage() {
   const [selected, setSelected] = useState<Inquiry | null>(null);
   const [contactedFilter, setContactedFilter] = useState<'all' | 'contacted' | 'uncontacted'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [noteDraft, setNoteDraft] = useState('');
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
+  const [noteRequestId, setNoteRequestId] = useState<string | null>(null);
+  const [noteSuccess, setNoteSuccess] = useState<string | null>(null);
+  const [noteRetry, setNoteRetry] = useState(false);
   const router = useRouter();
 
   const fetchInquiries = async () => {
@@ -32,13 +41,24 @@ export default function InquiriesAdminPage() {
       return;
     }
     const result = await response.json();
-    setInquiries(result.data || []);
+    const next = result.data || [];
+    setInquiries(next);
+    setSelected((prev) => (prev ? next.find((item: Inquiry) => item.id === prev.id) ?? prev : null));
     setLoading(false);
   };
 
   useEffect(() => {
     fetchInquiries();
   }, []);
+
+  useEffect(() => {
+    if (!selected) return;
+    setNoteDraft(selected.note ?? '');
+    setNoteError(null);
+    setNoteSuccess(null);
+    setNoteRequestId(null);
+    setNoteRetry(false);
+  }, [selected?.id]);
 
   const filteredInquiries = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -64,14 +84,66 @@ export default function InquiriesAdminPage() {
   }, [inquiries, contactedFilter, searchTerm]);
 
   const toggleContacted = async (inquiry: Inquiry) => {
-    const response = await fetch(`/api/inquiries/${inquiry.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contacted: !inquiry.contacted })
-    });
+    try {
+      const response = await fetchWithTimeout(`/api/inquiries/${inquiry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contacted: !inquiry.contacted })
+      });
 
-    if (response.ok) {
-      await fetchInquiries();
+      if (!response.ok) {
+        return;
+      }
+
+      const result = await response.json().catch(() => ({}));
+      const updated = result.data ?? { ...inquiry, contacted: !inquiry.contacted };
+      setInquiries((prev) => prev.map((item) => (item.id === inquiry.id ? updated : item)));
+      setSelected((prev) => (prev?.id === inquiry.id ? updated : prev));
+    } catch {
+      // No UI surface for toggle failure; keep existing state.
+    }
+  };
+
+  const saveNote = async () => {
+    if (!selected) return;
+    setNoteSaving(true);
+    setNoteError(null);
+    setNoteSuccess(null);
+    setNoteRequestId(null);
+    setNoteRetry(false);
+
+    try {
+      const response = await fetchWithTimeout(`/api/inquiries/${selected.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: noteDraft })
+      });
+      const result = await response.json().catch(() => ({}));
+      setNoteRequestId(result.requestId || null);
+
+      if (!response.ok) {
+        setNoteError(result.error || '메모 저장에 실패했습니다.');
+        setNoteRetry(true);
+        return;
+      }
+
+      const updated = result.data ?? {
+        ...selected,
+        note: noteDraft,
+        note_updated_at: new Date().toISOString()
+      };
+      setInquiries((prev) => prev.map((item) => (item.id === selected.id ? updated : item)));
+      setSelected(updated);
+      setNoteSuccess('메모가 저장되었습니다.');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        setNoteError('요청 시간이 초과되었습니다. 다시 시도해 주세요.');
+      } else {
+        setNoteError('메모 저장 중 오류가 발생했습니다.');
+      }
+      setNoteRetry(true);
+    } finally {
+      setNoteSaving(false);
     }
   };
 
@@ -134,6 +206,7 @@ export default function InquiriesAdminPage() {
                   <th className="py-2 pr-4">등록일</th>
                   <th className="py-2 pr-4">고객명</th>
                   <th className="py-2 pr-4">전화번호</th>
+                  <th className="py-2 pr-4">특이사항</th>
                   <th className="py-2 pr-4">연락유무</th>
                 </tr>
               </thead>
@@ -159,6 +232,22 @@ export default function InquiriesAdminPage() {
                           전화
                         </a>
                       </div>
+                    </td>
+                    <td className="py-2 pr-4">
+                      {inquiry.note?.trim() ? (
+                        <span
+                          title={
+                            inquiry.note.length > 30
+                              ? `${inquiry.note.slice(0, 30)}…`
+                              : inquiry.note
+                          }
+                          aria-label="특이사항 있음"
+                        >
+                          📝
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">-</span>
+                      )}
                     </td>
                     <td className="py-2 pr-4">
                       <button
@@ -221,6 +310,53 @@ export default function InquiriesAdminPage() {
             <div>
               <p className="text-xs text-slate-500">문의내용</p>
               <p className="text-sm">{selected.content}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">특이사항(통화 메모)</p>
+              <textarea
+                value={noteDraft}
+                onChange={(event) => setNoteDraft(event.target.value)}
+                rows={4}
+                className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+                placeholder="통화 중 특이사항을 기록하세요."
+              />
+              {selected.note_updated_at && (
+                <p className="mt-1 text-[11px] text-slate-400">
+                  마지막 메모 수정:{' '}
+                  {new Date(selected.note_updated_at).toLocaleString('ko-KR')}
+                </p>
+              )}
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={saveNote}
+                  disabled={noteSaving}
+                  className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+                >
+                  {noteSaving ? '저장 중...' : '메모 저장'}
+                </button>
+                {noteSuccess && (
+                  <div className="text-xs text-emerald-600">
+                    {noteSuccess}
+                    {noteRequestId && <span className="ml-2">requestId: {noteRequestId}</span>}
+                  </div>
+                )}
+                {noteError && (
+                  <div className="text-xs text-rose-600">
+                    {noteError}
+                    {noteRequestId && <span className="ml-2">requestId: {noteRequestId}</span>}
+                  </div>
+                )}
+                {noteRetry && (
+                  <button
+                    type="button"
+                    onClick={saveNote}
+                    className="rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600"
+                  >
+                    재시도
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </section>

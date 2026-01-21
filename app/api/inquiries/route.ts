@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
   const supabaseServer = getSupabaseServer();
   const { data, error } = await supabaseServer
     .from('inquiries')
-    .select('*')
+    .select('id, created_at, customer_name, phone, content, contacted, note, note_updated_at')
     .order('created_at', { ascending: false });
 
   if (error) {

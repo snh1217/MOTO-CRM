@@ -55,6 +55,8 @@ export async function GET(request: NextRequest) {
     { header: '성명', key: 'customer_name', width: 16 },
     { header: '전화번호', key: 'phone', width: 16 },
     { header: '문의내용', key: 'content', width: 40 },
+    { header: '특이사항', key: 'note', width: 40 },
+    { header: '메모수정일', key: 'note_updated_at', width: 20 },
     { header: '연락유무', key: 'contacted', width: 12 }
   ];
 
@@ -66,6 +68,8 @@ export async function GET(request: NextRequest) {
       customer_name: inquiry.customer_name ?? '',
       phone: inquiry.phone ?? '',
       content: inquiry.content ?? '',
+      note: inquiry.note ?? '',
+      note_updated_at: formatDateTime(inquiry.note_updated_at ?? null),
       contacted: inquiry.contacted ? '완료' : '미연락'
     });
   });

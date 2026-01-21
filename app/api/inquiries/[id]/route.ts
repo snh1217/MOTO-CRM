@@ -12,12 +12,25 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   const body = await request.json();
-  const contacted = Boolean(body.contacted);
+  const updates: { contacted?: boolean; note?: string; note_updated_at?: string } = {};
+
+  if (Object.prototype.hasOwnProperty.call(body, 'contacted')) {
+    updates.contacted = Boolean(body.contacted);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, 'note')) {
+    updates.note = typeof body.note === 'string' ? body.note : String(body.note ?? '');
+    updates.note_updated_at = new Date().toISOString();
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return jsonErrorResponse('No fields to update.', requestId, { status: 400 });
+  }
 
   const supabaseServer = getSupabaseServer();
   const { data, error } = await supabaseServer
     .from('inquiries')
-    .update({ contacted })
+    .update(updates)
     .eq('id', params.id)
     .select()
     .single();
