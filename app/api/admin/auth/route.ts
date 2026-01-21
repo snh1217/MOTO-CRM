@@ -4,6 +4,7 @@ import { createRequestId, jsonErrorResponse, jsonResponse } from '@/lib/apiUtils
 
 export async function POST(request: NextRequest) {
   const requestId = createRequestId();
+  console.log(`[admin][AUTH] requestId=${requestId}`);
   try {
     const { code } = await request.json();
     const adminCode = process.env.ADMIN_CODE;

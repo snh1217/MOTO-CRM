@@ -34,7 +34,7 @@ function splitVehicleName(vehicleName: string | null) {
 
 export async function GET(request: NextRequest) {
   const requestId = createRequestId();
-  console.log(`[receipts][EXPORT] requestId=${requestId}`);
+  console.log(`[as][EXPORT] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
     return jsonErrorResponse('인증 필요', requestId, { status: 401 });
@@ -42,12 +42,12 @@ export async function GET(request: NextRequest) {
 
   const supabaseServer = getSupabaseServer();
   const { data, error } = await supabaseServer
-    .from('receipts')
+    .from('as_receipts')
     .select('*')
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error(`[receipts][EXPORT] requestId=${requestId} error`, error);
+    console.error(`[as][EXPORT] requestId=${requestId} error`, error);
     return jsonErrorResponse(
       '엑셀 생성 실패',
       requestId,
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
   }
 
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet('Receipts');
+  const sheet = workbook.addWorksheet('AS');
   sheet.views = [{ state: 'frozen', ySplit: 1 }];
 
   sheet.columns = [
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
   return new Response(buffer, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="MOTO-CRM_접수내역_${today}.xlsx"`,
+      'Content-Disposition': `attachment; filename="MOTO-CRM_AS내역_${today}.xlsx"`,
       'x-request-id': requestId
     }
   });

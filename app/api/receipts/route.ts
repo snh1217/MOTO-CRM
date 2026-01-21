@@ -179,6 +179,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const requestId = createRequestId();
+  console.log(`[receipts][GET] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
     return jsonErrorResponse('인증 필요', requestId, { status: 401 });

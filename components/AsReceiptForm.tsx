@@ -27,7 +27,7 @@ const initialState = {
 
 type SubmitStage = 'idle' | 'vin' | 'engine' | 'db' | 'done' | 'error';
 
-export default function ReceiptForm() {
+export default function AsReceiptForm() {
   const [form, setForm] = useState(initialState);
   const [brand, setBrand] = useState<Brand>('ZT');
   const [model, setModel] = useState('');
@@ -171,8 +171,8 @@ export default function ReceiptForm() {
         payload.append('engine_image', engineImage);
       }
 
-      addLog('submit', '접수 저장 요청 시작');
-      const response = await fetchWithTimeout('/api/receipts', {
+      addLog('submit', 'A/S 접수 저장 요청 시작');
+      const response = await fetchWithTimeout('/api/as', {
         method: 'POST',
         body: payload
       });
@@ -182,7 +182,7 @@ export default function ReceiptForm() {
 
       if (!response.ok) {
         setSubmitStage('error');
-        setMessage(result.error || result.message || '접수 등록에 실패했습니다.');
+        setMessage(result.error || result.message || 'A/S 접수 등록에 실패했습니다.');
         setErrorDetails({
           requestId: result.requestId,
           status: response.status,
@@ -201,8 +201,8 @@ export default function ReceiptForm() {
       setHasManualSelection(false);
       setVinImage(null);
       setEngineImage(null);
-      setMessage(result.message || '접수 등록이 완료되었습니다.');
-      addLog('success', '접수 등록 완료');
+      setMessage(result.message || 'A/S 접수 등록이 완료되었습니다.');
+      addLog('success', 'A/S 접수 등록 완료');
     } catch (error) {
       setSubmitStage('error');
       setShowRetry(true);
@@ -469,11 +469,7 @@ export default function ReceiptForm() {
             </label>
             <label className="flex flex-col gap-1 text-sm">
               선택된 차종
-              <input
-                className={`${inputClassName} bg-slate-50 text-slate-500`}
-                value={vehicleName}
-                readOnly
-              />
+              <input className={`${inputClassName} bg-slate-50 text-slate-500`} value={vehicleName} readOnly />
             </label>
           </div>
         </div>
@@ -600,10 +596,10 @@ export default function ReceiptForm() {
           disabled={loading}
           className="h-11 rounded-lg bg-slate-900 px-5 text-sm font-medium text-white disabled:opacity-50"
         >
-          {loading ? '저장 중...' : '접수 등록'}
+          {loading ? '저장 중...' : 'A/S 접수 등록'}
         </button>
       </form>
-      {showDebugPanel && <DebugPanel logs={logs} title="접수 등록 로그" onClear={() => setLogs([])} />}
+      {showDebugPanel && <DebugPanel logs={logs} title="A/S 접수 등록 로그" onClear={() => setLogs([])} />}
     </>
   );
 }

@@ -5,6 +5,7 @@ import { createRequestId, jsonErrorResponse, jsonResponse, serializeSupabaseErro
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const requestId = createRequestId();
+  console.log(`[inquiries][PATCH] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
     return jsonErrorResponse('인증 필요', requestId, { status: 401 });

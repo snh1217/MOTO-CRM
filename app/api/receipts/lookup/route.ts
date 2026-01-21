@@ -7,6 +7,7 @@ const MIN_LENGTH = 4;
 
 export async function GET(request: NextRequest) {
   const requestId = createRequestId();
+  console.log(`[receipts][LOOKUP] requestId=${requestId}`);
   const { searchParams } = new URL(request.url);
   const vehicleNumber = String(searchParams.get('vehicle_number') ?? '');
   const normalized = normalizeVehicleNumber(vehicleNumber);

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 import { getStoragePathFromUrl } from '@/lib/storagePath';
 
-interface Receipt {
+interface AsReceipt {
   id: string;
   created_at: string;
   vehicle_name: string;
@@ -23,10 +23,10 @@ interface Receipt {
 
 const BUCKET = 'vin-engine';
 
-export default function ReceiptsAdminPage() {
-  const [receipts, setReceipts] = useState<Receipt[]>([]);
+export default function AsAdminPage() {
+  const [receipts, setReceipts] = useState<AsReceipt[]>([]);
   const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState<Receipt | null>(null);
+  const [selected, setSelected] = useState<AsReceipt | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalImage, setModalImage] = useState<{ url: string; title: string } | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
@@ -36,7 +36,7 @@ export default function ReceiptsAdminPage() {
 
   useEffect(() => {
     const fetchReceipts = async () => {
-      const response = await fetch('/api/receipts');
+      const response = await fetch('/api/as');
       if (response.status === 401) {
         router.replace('/admin');
         return;
@@ -101,7 +101,7 @@ export default function ReceiptsAdminPage() {
       <section className="rounded-xl bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-lg font-semibold">접수 내역</h2>
+            <h2 className="text-lg font-semibold">A/S 내역</h2>
             <p className="text-sm text-slate-500">총 {receipts.length}건</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -112,7 +112,7 @@ export default function ReceiptsAdminPage() {
               onChange={(event) => setQuery(event.target.value)}
             />
             <a
-              href="/api/receipts/export"
+              href="/api/as/export"
               className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
             >
               엑셀 다운로드
@@ -135,9 +135,9 @@ export default function ReceiptsAdminPage() {
               <thead className="border-b border-slate-200 text-left">
                 <tr>
                   <th className="py-2 pr-4">등록일</th>
-                  <th className="py-2 pr-4">차명</th>
+                  <th className="py-2 pr-4">차종</th>
                   <th className="py-2 pr-4">차량번호</th>
-                  <th className="py-2 pr-4">고객명</th>
+                  <th className="py-2 pr-4">성명</th>
                   <th className="py-2 pr-4">전화번호</th>
                   <th className="py-2 pr-4">작업</th>
                 </tr>
@@ -158,7 +158,7 @@ export default function ReceiptsAdminPage() {
                     <td className="py-2 pr-4">{receipt.phone || '-'}</td>
                     <td className="py-2 pr-4">
                       <Link
-                        href={`/admin/receipts/${receipt.id}/edit`}
+                        href={`/admin/as/${receipt.id}/edit`}
                         onClick={(event) => event.stopPropagation()}
                         className="rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-slate-300"
                       >
@@ -176,11 +176,8 @@ export default function ReceiptsAdminPage() {
       {selected && (
         <section className="rounded-xl bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">접수 상세</h3>
-            <button
-              className="text-sm text-slate-500"
-              onClick={() => setSelected(null)}
-            >
+            <h3 className="text-lg font-semibold">A/S 상세</h3>
+            <button className="text-sm text-slate-500" onClick={() => setSelected(null)}>
               닫기
             </button>
           </div>
@@ -192,7 +189,7 @@ export default function ReceiptsAdminPage() {
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">차명</p>
+              <p className="text-xs text-slate-500">차종</p>
               <p className="text-sm">{selected.vehicle_name}</p>
             </div>
             <div>
@@ -204,7 +201,7 @@ export default function ReceiptsAdminPage() {
               <p className="text-sm">{selected.mileage_km} km</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">고객명</p>
+              <p className="text-xs text-slate-500">성명</p>
               <p className="text-sm">{selected.customer_name || '-'}</p>
             </div>
             <div>
@@ -256,6 +253,7 @@ export default function ReceiptsAdminPage() {
           </div>
         </section>
       )}
+
       {modalImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"

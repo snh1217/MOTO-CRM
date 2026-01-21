@@ -6,8 +6,10 @@ import { usePathname } from 'next/navigation';
 const links = [
   { href: '/', label: '접수 등록' },
   { href: '/inquiry', label: '문의 등록' },
+  { href: '/as', label: 'A/S 접수' },
   { href: '/admin/receipts', label: '접수 내역' },
-  { href: '/admin/inquiries', label: '문의 내역' }
+  { href: '/admin/inquiries', label: '문의 내역' },
+  { href: '/admin/as', label: 'A/S 내역' }
 ];
 
 export default function Nav() {

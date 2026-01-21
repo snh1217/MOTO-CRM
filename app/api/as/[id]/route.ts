@@ -3,6 +3,7 @@ import { getSupabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin';
 import { phoneRegex, validateRequired } from '@/lib/validation';
 import { normalizeVehicleNumber } from '@/lib/normalizeVehicleNumber';
+import { getStoragePathFromUrl } from '@/lib/storagePath';
 import {
   createRequestId,
   jsonErrorResponse,
@@ -12,17 +13,9 @@ import {
 
 const BUCKET = process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'vin-engine';
 
-function getStoragePathFromUrl(url: string | null) {
-  if (!url) return null;
-  const marker = `/storage/v1/object/public/${BUCKET}/`;
-  const index = url.indexOf(marker);
-  if (index === -1) return null;
-  return decodeURIComponent(url.slice(index + marker.length));
-}
-
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const requestId = createRequestId();
-  console.log(`[receipts][GET:ID] requestId=${requestId}`);
+  console.log(`[as][GET:ID] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
     return jsonErrorResponse('인증 필요', requestId, { status: 401 });
@@ -30,13 +23,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   const supabaseServer = getSupabaseServer();
   const { data, error } = await supabaseServer
-    .from('receipts')
+    .from('as_receipts')
     .select('*')
     .eq('id', params.id)
     .single();
 
   if (error) {
-    console.error(`[receipts][GET:ID] requestId=${requestId} error`, error);
+    console.error(`[as][GET:ID] requestId=${requestId} error`, error);
     return jsonErrorResponse(
       '조회 실패',
       requestId,
@@ -50,7 +43,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const requestId = createRequestId();
-  console.log(`[receipts][PATCH] requestId=${requestId}`);
+  console.log(`[as][PATCH] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
     return jsonErrorResponse('인증 필요', requestId, { status: 401 });
@@ -59,15 +52,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   try {
     const supabaseServer = getSupabaseServer();
     const { data: existing, error: existingError } = await supabaseServer
-      .from('receipts')
+      .from('as_receipts')
       .select('*')
       .eq('id', params.id)
       .single();
 
     if (existingError || !existing) {
-      console.error(`[receipts][PATCH] requestId=${requestId} fetch error`, existingError);
+      console.error(`[as][PATCH] requestId=${requestId} fetch error`, existingError);
       return jsonErrorResponse(
-        '기존 접수 정보를 불러오지 못했습니다.',
+        '기존 A/S 정보를 불러오지 못했습니다.',
         requestId,
         { status: 500 },
         serializeSupabaseError(existingError)
@@ -116,7 +109,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     let engineUrl = existing.engine_image_url as string | null;
 
     if (deleteVin) {
-      const vinPath = getStoragePathFromUrl(vinUrl);
+      const vinPath = getStoragePathFromUrl(vinUrl, BUCKET);
       if (vinPath) {
         await supabaseServer.storage.from(BUCKET).remove([vinPath]);
       }
@@ -124,7 +117,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     if (deleteEngine) {
-      const enginePath = getStoragePathFromUrl(engineUrl);
+      const enginePath = getStoragePathFromUrl(engineUrl, BUCKET);
       if (enginePath) {
         await supabaseServer.storage.from(BUCKET).remove([enginePath]);
       }
@@ -132,15 +125,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     if (vinImage) {
-      const vinPath = `${crypto.randomUUID()}-${vinImage.name}`;
+      const vinPath = `as/vin/${crypto.randomUUID()}-${vinImage.name}`;
       const vinUpload = await supabaseServer.storage.from(BUCKET).upload(vinPath, vinImage, {
         contentType: vinImage.type
       });
 
       if (vinUpload.error) {
-        console.error(`[receipts][PATCH] requestId=${requestId} vin upload error`, vinUpload.error);
+        console.error(`[as][PATCH] requestId=${requestId} vin upload error`, vinUpload.error);
         return jsonErrorResponse(
-          '차대번호 업로드 실패',
+          'VIN 업로드 실패',
           requestId,
           { status: 500 },
           serializeSupabaseError(vinUpload.error),
@@ -152,21 +145,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     if (engineImage) {
-      const enginePath = `${crypto.randomUUID()}-${engineImage.name}`;
-      const engineUpload = await supabaseServer
-        .storage
-        .from(BUCKET)
-        .upload(enginePath, engineImage, {
-          contentType: engineImage.type
-        });
+      const enginePath = `as/engine/${crypto.randomUUID()}-${engineImage.name}`;
+      const engineUpload = await supabaseServer.storage.from(BUCKET).upload(enginePath, engineImage, {
+        contentType: engineImage.type
+      });
 
       if (engineUpload.error) {
-        console.error(
-          `[receipts][PATCH] requestId=${requestId} engine upload error`,
-          engineUpload.error
-        );
+        console.error(`[as][PATCH] requestId=${requestId} engine upload error`, engineUpload.error);
         return jsonErrorResponse(
-          '엔진번호 업로드 실패',
+          '엔진 업로드 실패',
           requestId,
           { status: 500 },
           serializeSupabaseError(engineUpload.error),
@@ -178,7 +165,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     const { data: updated, error } = await supabaseServer
-      .from('receipts')
+      .from('as_receipts')
       .update({
         vehicle_name: vehicleName,
         vehicle_number: vehicleNumber,
@@ -196,7 +183,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       .single();
 
     if (error) {
-      console.error(`[receipts][PATCH] requestId=${requestId} db update error`, error);
+      console.error(`[as][PATCH] requestId=${requestId} db update error`, error);
       return jsonErrorResponse(
         '수정 저장 실패',
         requestId,
@@ -224,12 +211,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       .upsert(profilePayload, { onConflict: 'vehicle_number_norm' });
 
     if (profileError) {
-      console.error(
-        `[receipts][PATCH] requestId=${requestId} profile upsert error`,
-        profileError
-      );
+      console.error(`[as][PATCH] requestId=${requestId} profile upsert error`, profileError);
       return jsonErrorResponse(
-        '프로필 최신화 실패',
+        '차량 정보 최신화 실패',
         requestId,
         { status: 500 },
         serializeSupabaseError(profileError),
@@ -239,14 +223,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     return jsonResponse(
       {
-        message: '접수 수정이 완료되었습니다. 고객/차량 정보가 최신으로 저장되었습니다.',
+        message: 'A/S 수정이 완료되었습니다. 고객/차량 정보가 최신으로 저장됩니다.',
         data: updated
       },
       { status: 200 },
       requestId
     );
   } catch (error) {
-    console.error(`[receipts][PATCH] requestId=${requestId} unexpected error`, error);
+    console.error(`[as][PATCH] requestId=${requestId} unexpected error`, error);
     return jsonErrorResponse('서버 오류가 발생했습니다.', requestId, { status: 500 });
   }
 }

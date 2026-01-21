@@ -164,3 +164,19 @@ npm run dev
 ### Supabase 확인
 - Database → Logs에서 API 오류 확인
 - Storage 업로드 실패 시 버킷 권한/정책(RLS, public 설정)을 점검하세요.
+
+## 운영자용 오류 확인 가이드 (requestId 기준)
+
+### Vercel Logs 확인
+1. Vercel Dashboard → Project → Deployments 선택
+2. 문제가 발생한 배포 클릭
+3. `Functions` 또는 `Logs` 탭에서 `requestId`로 검색
+
+### 브라우저 개발자도구
+- Network 탭에서 실패한 API 응답 본문 확인
+- 응답 JSON의 `requestId`를 복사하여 Vercel Logs에서 검색
+- Console 로그에 표시된 requestId로도 추적 가능
+
+### Supabase 확인 포인트
+- Database → Logs에서 요청 실패/쿼리 오류 확인
+- Storage 업로드 실패 시 버킷 권한/정책(RLS, public 설정) 확인

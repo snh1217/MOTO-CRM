@@ -6,6 +6,7 @@ import { createRequestId, jsonErrorResponse, jsonResponse, serializeSupabaseErro
 
 export async function POST(request: NextRequest) {
   const requestId = createRequestId();
+  console.log(`[inquiries][POST] requestId=${requestId}`);
   try {
     const body = await request.json();
     const customerName = String(body.customer_name ?? '').trim();
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const requestId = createRequestId();
+  console.log(`[inquiries][GET] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
     return jsonErrorResponse('인증 필요', requestId, { status: 401 });

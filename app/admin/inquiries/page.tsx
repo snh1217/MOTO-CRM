@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 
@@ -13,10 +13,16 @@ interface Inquiry {
   contacted: boolean;
 }
 
+function normalizePhoneNumber(phone: string) {
+  return phone.replace(/[^0-9]/g, '');
+}
+
 export default function InquiriesAdminPage() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Inquiry | null>(null);
+  const [contactedFilter, setContactedFilter] = useState<'all' | 'contacted' | 'uncontacted'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
 
   const fetchInquiries = async () => {
@@ -33,6 +39,29 @@ export default function InquiriesAdminPage() {
   useEffect(() => {
     fetchInquiries();
   }, []);
+
+  const filteredInquiries = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return inquiries.filter((inquiry) => {
+      const matchesContacted =
+        contactedFilter === 'all' ||
+        (contactedFilter === 'contacted' && inquiry.contacted) ||
+        (contactedFilter === 'uncontacted' && !inquiry.contacted);
+
+      if (!matchesContacted) {
+        return false;
+      }
+
+      if (!term) {
+        return true;
+      }
+
+      return (
+        inquiry.customer_name.toLowerCase().includes(term) ||
+        inquiry.phone.toLowerCase().includes(term)
+      );
+    });
+  }, [inquiries, contactedFilter, searchTerm]);
 
   const toggleContacted = async (inquiry: Inquiry) => {
     const response = await fetch(`/api/inquiries/${inquiry.id}`, {
@@ -58,7 +87,7 @@ export default function InquiriesAdminPage() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-lg font-semibold">문의 내역</h2>
-            <p className="text-sm text-slate-500">총 {inquiries.length}건</p>
+            <p className="text-sm text-slate-500">총 {filteredInquiries.length}건</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <a
@@ -67,6 +96,24 @@ export default function InquiriesAdminPage() {
             >
               엑셀 다운로드
             </a>
+            <select
+              value={contactedFilter}
+              onChange={(event) =>
+                setContactedFilter(event.target.value as 'all' | 'contacted' | 'uncontacted')
+              }
+              className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700"
+            >
+              <option value="all">전체</option>
+              <option value="uncontacted">미연락</option>
+              <option value="contacted">연락 완료</option>
+            </select>
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="고객명/전화번호 검색"
+              className="w-48 rounded-md border border-slate-200 px-3 py-2 text-sm"
+            />
             <button
               type="button"
               onClick={handleExitAdmin}
@@ -91,7 +138,7 @@ export default function InquiriesAdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {inquiries.map((inquiry) => (
+                {filteredInquiries.map((inquiry) => (
                   <tr
                     key={inquiry.id}
                     className="cursor-pointer border-b border-slate-100 hover:bg-slate-50"
@@ -101,7 +148,18 @@ export default function InquiriesAdminPage() {
                       {new Date(inquiry.created_at).toLocaleDateString('ko-KR')}
                     </td>
                     <td className="py-2 pr-4">{inquiry.customer_name}</td>
-                    <td className="py-2 pr-4">{inquiry.phone}</td>
+                    <td className="py-2 pr-4">
+                      <div className="flex items-center gap-2">
+                        <span>{inquiry.phone}</span>
+                        <a
+                          href={`tel:${normalizePhoneNumber(inquiry.phone)}`}
+                          className="rounded-full border border-slate-200 px-2 py-0.5 text-xs text-slate-600 hover:border-slate-300"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          전화
+                        </a>
+                      </div>
+                    </td>
                     <td className="py-2 pr-4">
                       <button
                         type="button"
@@ -150,7 +208,15 @@ export default function InquiriesAdminPage() {
             </div>
             <div>
               <p className="text-xs text-slate-500">전화번호</p>
-              <p className="text-sm">{selected.phone}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm">{selected.phone}</p>
+                <a
+                  href={`tel:${normalizePhoneNumber(selected.phone)}`}
+                  className="rounded-full border border-slate-200 px-2 py-0.5 text-xs text-slate-600 hover:border-slate-300"
+                >
+                  전화
+                </a>
+              </div>
             </div>
             <div>
               <p className="text-xs text-slate-500">문의내용</p>
@@ -162,3 +228,4 @@ export default function InquiriesAdminPage() {
     </main>
   );
 }
+

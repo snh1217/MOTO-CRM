@@ -17,7 +17,7 @@ import {
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 import { getStoragePathFromUrl } from '@/lib/storagePath';
 
-interface Receipt {
+interface AsReceipt {
   id: string;
   created_at: string;
   vehicle_name: string;
@@ -36,11 +36,11 @@ type SubmitStage = 'idle' | 'vin' | 'engine' | 'db' | 'done' | 'error';
 
 const BUCKET = 'vin-engine';
 
-export default function ReceiptEditPage() {
+export default function AsEditPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const [receipt, setReceipt] = useState<AsReceipt | null>(null);
   const [form, setForm] = useState({
     vehicleNumber: '',
     mileageKm: '',
@@ -78,6 +78,7 @@ export default function ReceiptEditPage() {
   const vehicleName = model ? `${brand} ${model}` : '';
   const inputClassName =
     'h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200';
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
@@ -150,19 +151,19 @@ export default function ReceiptEditPage() {
 
   useEffect(() => {
     const loadReceipt = async () => {
-      const response = await fetch(`/api/receipts/${params.id}`);
+      const response = await fetch(`/api/as/${params.id}`);
       if (response.status === 401) {
         router.replace('/admin');
         return;
       }
       const result = await response.json();
       if (!response.ok) {
-        setMessage(result.error || result.message || '접수 정보를 불러오지 못했습니다.');
+        setMessage(result.error || result.message || 'A/S 정보를 불러오지 못했습니다.');
         setErrorDetails({ requestId: result.requestId, status: response.status, body: result });
         return;
       }
 
-      const data: Receipt = result.data;
+      const data: AsReceipt = result.data;
       setReceipt(data);
       setForm({
         vehicleNumber: data.vehicle_number,
@@ -252,10 +253,10 @@ export default function ReceiptEditPage() {
       payload.append('engine_image', engineImage);
     }
 
-    addLog('submit', '접수 수정 요청 시작');
+    addLog('submit', 'A/S 수정 요청 시작');
 
     try {
-      const response = await fetchWithTimeout(`/api/receipts/${params.id}`, {
+      const response = await fetchWithTimeout(`/api/as/${params.id}`, {
         method: 'PATCH',
         body: payload
       });
@@ -265,17 +266,17 @@ export default function ReceiptEditPage() {
 
       if (!response.ok) {
         setSubmitStage('error');
-        setMessage(result.error || result.message || '접수 수정에 실패했습니다.');
+        setMessage(result.error || result.message || 'A/S 수정에 실패했습니다.');
         setErrorDetails({ requestId: result.requestId, status: response.status, body: result });
         addLog('error', `수정 실패: ${result.error || result.message}`);
         return;
       }
 
       setSubmitStage('done');
-      setMessage(result.message || '접수 수정이 완료되었습니다.');
+      setMessage(result.message || 'A/S 수정이 완료되었습니다.');
       setReceipt(result.data);
-      addLog('success', '접수 수정 완료');
-      setTimeout(() => router.push('/admin/receipts'), 800);
+      addLog('success', 'A/S 수정 완료');
+      setTimeout(() => router.push('/admin/as'), 800);
     } catch (error) {
       setSubmitStage('error');
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -317,7 +318,7 @@ export default function ReceiptEditPage() {
       <main className="space-y-6">
         <Nav />
         <section className="rounded-xl bg-white p-6 shadow-sm">
-          <p className="text-sm text-slate-500">{message ?? '접수 정보를 불러오는 중...'}</p>
+          <p className="text-sm text-slate-500">{message ?? 'A/S 정보를 불러오는 중...'}</p>
           {errorDetails && (
             <details className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
               <summary className="cursor-pointer text-xs font-medium text-slate-600">
@@ -339,7 +340,7 @@ export default function ReceiptEditPage() {
         <Nav />
         <section className="rounded-xl bg-white p-6 shadow-sm">
           <div className="mb-6">
-            <h2 className="text-lg font-semibold">접수 수정</h2>
+            <h2 className="text-lg font-semibold">A/S 수정</h2>
             <p className="text-sm text-slate-500">필수 항목만 입력해도 저장됩니다.</p>
           </div>
           <form
@@ -623,7 +624,7 @@ export default function ReceiptEditPage() {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => router.push('/admin/receipts')}
+                onClick={() => router.push('/admin/as')}
                 className="h-10 rounded-lg border border-slate-200 px-4 text-sm text-slate-600"
               >
                 목록으로
@@ -639,9 +640,7 @@ export default function ReceiptEditPage() {
           </form>
         </section>
       </main>
-      {showDebugPanel && (
-        <DebugPanel logs={logs} title="접수 수정 로그" onClear={() => setLogs([])} />
-      )}
+      {showDebugPanel && <DebugPanel logs={logs} title="A/S 수정 로그" onClear={() => setLogs([])} />}
     </>
   );
 }
