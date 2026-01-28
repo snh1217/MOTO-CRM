@@ -130,8 +130,40 @@ export default function AsAdminPage() {
         {loading ? (
           <p className="mt-6 text-sm text-slate-500">불러오는 중...</p>
         ) : (
-          <div className="mt-6 overflow-x-auto">
-            <table className="min-w-full border-collapse text-sm">
+          <>
+            <div className="mt-6 space-y-3 md:hidden">
+              {filtered.map((receipt) => (
+                <button
+                  key={receipt.id}
+                  type="button"
+                  onClick={() => setSelected(receipt)}
+                  className="w-full rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-semibold">{receipt.customer_name || '??? ??'}</p>
+                      <p className="text-xs text-slate-500">
+                        {new Date(receipt.created_at).toLocaleDateString('ko-KR')}
+                      </p>
+                    </div>
+                    <span className="text-xs text-slate-500">{receipt.vehicle_number}</span>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-700">{receipt.vehicle_name}</p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-sm">{receipt.phone || '-'}</span>
+                    <Link
+                      href={`/admin/as/${receipt.id}/edit`}
+                      onClick={(event) => event.stopPropagation()}
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600"
+                    >
+                      ??
+                    </Link>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="mt-6 hidden overflow-x-auto md:block">
+              <table className="min-w-full border-collapse text-sm">
               <thead className="border-b border-slate-200 text-left">
                 <tr>
                   <th className="py-2 pr-4">등록일</th>
@@ -169,7 +201,8 @@ export default function AsAdminPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </section>
 

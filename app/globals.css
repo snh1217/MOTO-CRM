@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  input,
+  select,
+  textarea {
+    @apply rounded-md border border-slate-200 px-3 py-2 text-base bg-white;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  button {
+    -webkit-appearance: none;
+    appearance: none;
+    font-size: 16px;
+  }
+}
+
 body {
   @apply bg-slate-50 text-slate-900;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
