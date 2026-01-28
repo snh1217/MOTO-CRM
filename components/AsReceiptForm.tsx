@@ -31,7 +31,6 @@ export default function AsReceiptForm() {
   const [form, setForm] = useState(initialState);
   const [brand, setBrand] = useState<Brand>('ZT');
   const [model, setModel] = useState('');
-  const [autoFillEnabled, setAutoFillEnabled] = useState(true);
   const [autoFillMessage, setAutoFillMessage] = useState<string | null>(null);
   const [vinImage, setVinImage] = useState<File | null>(null);
   const [engineImage, setEngineImage] = useState<File | null>(null);
@@ -45,6 +44,8 @@ export default function AsReceiptForm() {
   const [showRetry, setShowRetry] = useState(false);
   const [logs, setLogs] = useState<DebugLogEntry[]>([]);
   const lookupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lookupAbortRef = useRef<AbortController | null>(null);
+  const lookupSeqRef = useRef(0);
   const stageTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [vinPreviewUrl, setVinPreviewUrl] = useState<string | null>(null);
@@ -234,12 +235,12 @@ export default function AsReceiptForm() {
   };
 
   useEffect(() => {
-    if (!autoFillEnabled) {
-      return;
-    }
-
     if (lookupTimeoutRef.current) {
       clearTimeout(lookupTimeoutRef.current);
+    }
+    if (lookupAbortRef.current) {
+      lookupAbortRef.current.abort();
+      lookupAbortRef.current = null;
     }
 
     const normalized = normalizeVehicleNumber(form.vehicleNumber);
@@ -249,14 +250,21 @@ export default function AsReceiptForm() {
     }
 
     lookupTimeoutRef.current = setTimeout(async () => {
+      const seq = ++lookupSeqRef.current;
+      const controller = new AbortController();
+      lookupAbortRef.current = controller;
       try {
         addLog('lookup', '차량번호 자동 조회 요청');
         const response = await fetchWithTimeout(
           `/api/receipts/lookup?vehicle_number=${encodeURIComponent(form.vehicleNumber)}`,
-          {},
+          { signal: controller.signal },
           12000
         );
         const result = await response.json();
+
+        if (seq !== lookupSeqRef.current) {
+          return;
+        }
 
         if (!response.ok || !result.found) {
           setAutoFillMessage(null);
@@ -295,8 +303,15 @@ export default function AsReceiptForm() {
         setAutoFillMessage('기존 차량 정보가 자동으로 채워졌습니다.');
         addLog('lookup', '자동 조회 완료');
       } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
         setAutoFillMessage(null);
         addLog('lookup', '자동 조회 요청 실패');
+      } finally {
+        if (lookupAbortRef.current === controller) {
+          lookupAbortRef.current = null;
+        }
       }
     }, 600);
 
@@ -304,8 +319,12 @@ export default function AsReceiptForm() {
       if (lookupTimeoutRef.current) {
         clearTimeout(lookupTimeoutRef.current);
       }
+      if (lookupAbortRef.current) {
+        lookupAbortRef.current.abort();
+        lookupAbortRef.current = null;
+      }
     };
-  }, [autoFillEnabled, form.vehicleNumber, model, hasManualSelection]);
+  }, [form.vehicleNumber, model, hasManualSelection]);
 
   const stageLabel = useMemo(() => {
     switch (submitStage) {
@@ -336,18 +355,6 @@ export default function AsReceiptForm() {
         }}
         className="space-y-5"
       >
-        <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-          <span>차량번호 자동 조회</span>
-          <button
-            type="button"
-            onClick={() => setAutoFillEnabled((prev) => !prev)}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
-              autoFillEnabled ? 'bg-slate-900 text-white' : 'bg-white text-slate-500'
-            }`}
-          >
-            {autoFillEnabled ? 'ON' : 'OFF'}
-          </button>
-        </div>
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">차량 정보</p>
           <div className="flex flex-wrap gap-2">
