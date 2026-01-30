@@ -1,182 +1,197 @@
-# MOTO-CRM
+# Supabase CLI
 
-오토바이 정비 접수/문의 관리용 CRM입니다. Next.js(App Router) + Supabase + Vercel 환경을 기준으로 구성되어 있습니다.
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-## 프로젝트 구조
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
-```text
-app/
-  api/
-    admin/
-      auth/route.ts
-      logout/route.ts
-    receipts/route.ts
-    receipts/export/route.ts
-    inquiries/route.ts
-    inquiries/[id]/route.ts
-    inquiries/export/route.ts
-  admin/
-    receipts/page.tsx
-    inquiries/page.tsx
-    page.tsx
-  inquiry/page.tsx
-  globals.css
-  layout.tsx
-  page.tsx
-components/
-  InquiryForm.tsx
-  Nav.tsx
-  ReceiptForm.tsx
-lib/
-  admin.ts
-  auth.ts
-  supabase.ts
-  validation.ts
-```
+This repository contains all the functionality for Supabase CLI.
 
-## 로컬 실행
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
+
+## Getting started
+
+### Install the CLI
+
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
 ```bash
-npm install
-npm run dev
+npm i supabase --save-dev
 ```
 
-## 환경 변수
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
+
+```
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
+```
+
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
+
+<details>
+  <summary><b>macOS</b></summary>
+
+  Available via [Homebrew](https://brew.sh). To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Windows</b></summary>
+
+  Available via [Scoop](https://scoop.sh). To install:
+
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
+
+  To upgrade:
+
+  ```powershell
+  scoop update supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-ADMIN_CODE=motostar
-SESSION_SECRET=...
-SUPABASE_VIN_ENGINE_BUCKET=vin-engine
+supabase bootstrap
 ```
 
-## Supabase SQL 스키마
+Or using npx:
 
-```sql
-create table if not exists receipts (
-  id uuid primary key default gen_random_uuid(),
-  created_at timestamptz not null default now(),
-  vehicle_name text not null,
-  vehicle_number text not null,
-  mileage_km integer not null,
-  customer_name text,
-  phone text,
-  purchase_date date,
-  vin_image_url text,
-  engine_image_url text,
-  symptom text,
-  service_detail text
-);
-
-create table if not exists inquiries (
-  id uuid primary key default gen_random_uuid(),
-  created_at timestamptz not null default now(),
-  customer_name text not null,
-  phone text not null,
-  content text not null,
-  contacted boolean not null default false
-);
-
-create table if not exists vehicle_profiles (
-  vehicle_number_norm text primary key,
-  vehicle_number_raw text not null,
-  vehicle_name text not null,
-  mileage_km integer,
-  customer_name text,
-  phone text,
-  purchase_date date,
-  updated_at timestamptz not null default now()
-);
-```
-
-### 필수/선택 컬럼 변경 SQL
-
-```sql
-alter table receipts
-  alter column customer_name drop not null,
-  alter column phone drop not null,
-  alter column purchase_date drop not null,
-  alter column vin_image_url drop not null,
-  alter column engine_image_url drop not null,
-  alter column symptom drop not null,
-  alter column service_detail drop not null;
-
-alter table vehicle_profiles
-  alter column customer_name drop not null,
-  alter column phone drop not null,
-  alter column purchase_date drop not null;
-```
-
-## RLS 예시 (선택)
-
-```sql
-alter table receipts enable row level security;
-alter table inquiries enable row level security;
-
--- public insert only
-create policy "public insert receipts" on receipts
-  for insert with check (true);
-
-create policy "public insert inquiries" on inquiries
-  for insert with check (true);
-```
-
-## Storage 가이드
-
-- 버킷명: `vin-engine` (또는 `SUPABASE_VIN_ENGINE_BUCKET` 값)
-- 공개 버킷으로 설정 (public)
-- 업로드 경로는 랜덤 UUID 기반으로 저장
-- 버킷 정책 예시: `storage.objects` 테이블에서 public 읽기를 허용하거나, 서비스 롤 키로만 쓰기 수행
-
-```sql
--- public 버킷 설정 시 Supabase가 자동으로 공개 읽기를 처리합니다.
--- 서비스 롤 키는 RLS를 우회하므로 API 서버에서 업로드가 가능합니다.
-```
-
-## Vercel 배포
-
-1. GitHub 저장소 연결
-2. 환경 변수 등록 (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, ADMIN_CODE, SESSION_SECRET)
-3. `npm run build` 후 배포 완료
-4. Root Directory는 `package.json`이 위치한 저장소 루트로 설정
-5. 필요 시 Vercel Project Settings > Security에서 보호된 환경 변수 설정
-
-## CORS/모바일 앱 확장
-
-모바일 앱에서 API를 호출할 경우, 필요한 도메인에 대해 `Access-Control-Allow-Origin` 헤더를 추가하도록 API Route Handler에 확장 가능합니다. 기본적으로 동일 도메인 호출을 가정합니다.
-
-## 오류/로그 확인 가이드
-
-### Vercel Logs 확인
-1. Vercel Dashboard → Project → Deployments 선택
-2. 문제가 발생한 배포 클릭
-3. `Functions` 또는 `Logs` 탭에서 `requestId`로 검색
-
-### 로컬 확인
 ```bash
-npm run dev
+npx supabase bootstrap
 ```
-- 브라우저 DevTools → Network/Console에서 API 실패 응답 확인
-- 응답 본문에 `requestId`가 포함되어 있으며, 서버 로그와 함께 추적 가능합니다.
 
-### Supabase 확인
-- Database → Logs에서 API 오류 확인
-- Storage 업로드 실패 시 버킷 권한/정책(RLS, public 설정)을 점검하세요.
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
 
-## 운영자용 오류 확인 가이드 (requestId 기준)
+## Docs
 
-### Vercel Logs 확인
-1. Vercel Dashboard → Project → Deployments 선택
-2. 문제가 발생한 배포 클릭
-3. `Functions` 또는 `Logs` 탭에서 `requestId`로 검색
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
 
-### 브라우저 개발자도구
-- Network 탭에서 실패한 API 응답 본문 확인
-- 응답 JSON의 `requestId`를 복사하여 Vercel Logs에서 검색
-- Console 로그에 표시된 requestId로도 추적 가능
+## Breaking changes
 
-### Supabase 확인 포인트
-- Database → Logs에서 요청 실패/쿼리 오류 확인
-- Storage 업로드 실패 시 버킷 권한/정책(RLS, public 설정) 확인
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
+
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
+```
+
+## Home To-dos
+
+- Home page shows Today and Tomorrow task lists.
+- Each list is stored by date (YYYY-MM-DD) in the `todos` table.
+- Day rollover is automatic because the UI always fetches tasks for the current date; tomorrow becomes today after midnight.
+
+### Migration
+
+Run the SQL:
+- `sql/todos.sql`
+
+If you use Supabase CLI migrations:
+- `supabase db push`
+
+### Quick Test
+
+1) Open `/` and add a Today item, save, refresh.
+2) Add a Tomorrow item and confirm it appears under the correct date.
+3) Change system date to tomorrow and confirm yesterday's tomorrow list becomes today's list.

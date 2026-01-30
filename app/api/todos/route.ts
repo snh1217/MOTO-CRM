@@ -1,0 +1,87 @@
+import type { NextRequest } from 'next/server';
+import { getSupabaseServer } from '@/lib/supabase';
+import { requireAdmin } from '@/lib/admin';
+import { createRequestId, jsonErrorResponse, jsonResponse, serializeSupabaseError } from '@/lib/apiUtils';
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidDate(dateValue: string) {
+  return DATE_PATTERN.test(dateValue);
+}
+
+export async function GET(request: NextRequest) {
+  const requestId = createRequestId();
+  const isAdmin = await requireAdmin(request);
+  if (!isAdmin) {
+    return jsonErrorResponse('Unauthorized', requestId, { status: 401 });
+  }
+
+  const date = request.nextUrl.searchParams.get('date') ?? '';
+  if (!isValidDate(date)) {
+    return jsonErrorResponse('Invalid date parameter.', requestId, { status: 400 });
+  }
+
+  const supabaseServer = getSupabaseServer();
+  const { data, error } = await supabaseServer
+    .from('todos')
+    .select('date, items, updated_at')
+    .eq('date', date)
+    .maybeSingle();
+
+  if (error) {
+    return jsonErrorResponse('Fetch failed', requestId, { status: 500 }, serializeSupabaseError(error));
+  }
+
+  return jsonResponse(
+    {
+      data: {
+        date,
+        items: data?.items ?? []
+      }
+    },
+    { status: 200 },
+    requestId
+  );
+}
+
+export async function PUT(request: NextRequest) {
+  const requestId = createRequestId();
+  const isAdmin = await requireAdmin(request);
+  if (!isAdmin) {
+    return jsonErrorResponse('Unauthorized', requestId, { status: 401 });
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const date = typeof body.date === 'string' ? body.date : '';
+  const items = Array.isArray(body.items) ? body.items.map((item: unknown) => String(item)) : [];
+
+  if (!isValidDate(date)) {
+    return jsonErrorResponse('Invalid date parameter.', requestId, { status: 400 });
+  }
+
+  const supabaseServer = getSupabaseServer();
+  const { data, error } = await supabaseServer
+    .from('todos')
+    .upsert({
+      date,
+      items,
+      updated_at: new Date().toISOString()
+    })
+    .select('date, items')
+    .single();
+
+  if (error) {
+    return jsonErrorResponse('Save failed', requestId, { status: 500 }, serializeSupabaseError(error));
+  }
+
+  return jsonResponse(
+    {
+      data: {
+        date: data?.date ?? date,
+        items: data?.items ?? items
+      }
+    },
+    { status: 200 },
+    requestId
+  );
+}
