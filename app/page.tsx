@@ -45,7 +45,10 @@ export default function HomePage() {
     return formatDate(date);
   }, [todayKey]);
 
-  const fetchTodos = async (dateKey: string, setter: (next: TodoState) => void) => {
+  const fetchTodos = async (
+    dateKey: string,
+    setter: React.Dispatch<React.SetStateAction<TodoState>>
+  ) => {
     setter((prev) => ({ ...prev, loading: true, error: null, requestId: null }));
     const response = await fetch(`/api/todos?date=${encodeURIComponent(dateKey)}`);
     if (response.status === 401) {
@@ -74,7 +77,7 @@ export default function HomePage() {
   const saveTodos = async (
     dateKey: string,
     items: string[],
-    setter: (next: TodoState | ((prev: TodoState) => TodoState)) => void
+    setter: React.Dispatch<React.SetStateAction<TodoState>>
   ) => {
     setter((prev) => ({ ...prev, saving: true, error: null, requestId: null }));
     const response = await fetch('/api/todos', {
@@ -118,7 +121,7 @@ export default function HomePage() {
 
   const handleAdd = (
     value: string,
-    setter: (updater: (prev: TodoState) => TodoState) => void,
+    setter: React.Dispatch<React.SetStateAction<TodoState>>,
     clear: () => void
   ) => {
     const trimmed = value.trim();
@@ -129,7 +132,7 @@ export default function HomePage() {
 
   const removeItem = (
     index: number,
-    setter: (updater: (prev: TodoState) => TodoState) => void
+    setter: React.Dispatch<React.SetStateAction<TodoState>>
   ) => {
     setter((prev) => ({
       ...prev,
