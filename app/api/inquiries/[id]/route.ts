@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const isAdmin = await requireAdmin(request);
   const authMs = performance.now() - authStart;
   if (!isAdmin) {
-    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
+    return jsonErrorResponse('?�증 ?�요', requestId, { status: 401 });
   }
 
   const dbStart = performance.now();
@@ -20,13 +20,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     .from('inquiries')
     .select('id, created_at, customer_name, phone, content, contacted, note, note_updated_at')
     .eq('id', params.id)
+    .eq('center_id', isAdmin.center_id)
     .single();
   const dbMs = performance.now() - dbStart;
 
   if (error) {
     console.error(`[inquiries][DETAIL] requestId=${requestId} error`, error);
     return jsonErrorResponse(
-      '조회 실패',
+      '조회 ?�패',
       requestId,
       { status: 500 },
       serializeSupabaseError(error)
@@ -67,7 +68,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   console.log(`[inquiries][PATCH] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
+    return jsonErrorResponse('?�증 ?�요', requestId, { status: 401 });
   }
 
   const body = await request.json();
@@ -91,18 +92,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     .from('inquiries')
     .update(updates)
     .eq('id', params.id)
+    .eq('center_id', isAdmin.center_id)
     .select()
     .single();
 
   if (error) {
     console.error(`[inquiries][PATCH] requestId=${requestId} error`, error);
     return jsonErrorResponse(
-      '업데이트 실패',
+      '?�데?�트 ?�패',
       requestId,
       { status: 500 },
       serializeSupabaseError(error)
     );
   }
 
-  return jsonResponse({ message: '업데이트 완료', data }, { status: 200 }, requestId);
+  return jsonResponse({ message: '?�데?�트 ?�료', data }, { status: 200 }, requestId);
 }

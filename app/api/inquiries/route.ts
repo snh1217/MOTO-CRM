@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { phoneRegex, validateRequired } from '@/lib/validation';
 import { requireAdmin } from '@/lib/admin';
+import { resolveCenterId } from '@/lib/centers';
 import { createRequestId, jsonErrorResponse, jsonResponse, serializeSupabaseError } from '@/lib/apiUtils';
 
 export async function POST(request: NextRequest) {
@@ -22,20 +23,26 @@ export async function POST(request: NextRequest) {
 
     if (missing.length > 0) {
       return jsonErrorResponse(
-        `í•„ìˆ˜ ê°’ ëˆ„ë½: ${missing.join(', ')}`,
+        `?„ìˆ˜ ê°??„ë½: ${missing.join(', ')}`,
         requestId,
         { status: 400 }
       );
     }
 
     if (!phoneRegex.test(phone)) {
-      return jsonErrorResponse('ì „í™”ë²ˆí˜¸ í˜•ì‹ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.', requestId, { status: 400 });
+      return jsonErrorResponse('?„í™”ë²ˆí˜¸ ?•ì‹???¬ë°”ë¥´ì? ?ŠìŠµ?ˆë‹¤.', requestId, { status: 400 });
     }
 
     const supabaseServer = getSupabaseServer();
+    const centerId = await resolveCenterId(request);
+    if (!centerId) {
+      return jsonErrorResponse('¼¾ÅÍ Á¤º¸¸¦ È®ÀÎÇÒ ¼ö ¾ø½À´Ï´Ù.', requestId, { status: 400 });
+    }
+
     const { data, error } = await supabaseServer
       .from('inquiries')
       .insert({
+        center_id: centerId,
         customer_name: customerName,
         phone,
         content,
@@ -47,17 +54,17 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error(`[inquiries][POST] requestId=${requestId} error`, error);
       return jsonErrorResponse(
-        'ì €ì¥ ì‹¤íŒ¨',
+        '?€???¤íŒ¨',
         requestId,
         { status: 500 },
         serializeSupabaseError(error)
       );
     }
 
-    return jsonResponse({ message: 'ë¬¸ì˜ê°€ ë“±ë¡ë˜ì—ˆìŠµë‹ˆë‹¤.', data }, { status: 200 }, requestId);
+    return jsonResponse({ message: 'ë¬¸ì˜ê°€ ?±ë¡?˜ì—ˆ?µë‹ˆ??', data }, { status: 200 }, requestId);
   } catch (error) {
     console.error(`[inquiries][POST] requestId=${requestId} error`, error);
-    return jsonErrorResponse('ì„œë²„ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', requestId, { status: 500 });
+    return jsonErrorResponse('?œë²„ ?¤ë¥˜ê°€ ë°œìƒ?ˆìŠµ?ˆë‹¤.', requestId, { status: 500 });
   }
 }
 
@@ -68,7 +75,7 @@ export async function GET(request: NextRequest) {
   const isAdmin = await requireAdmin(request);
   const authMs = performance.now() - authStart;
   if (!isAdmin) {
-    return jsonErrorResponse('ì¸ì¦ í•„ìš”', requestId, { status: 401 });
+    return jsonErrorResponse('?¸ì¦ ?„ìš”', requestId, { status: 401 });
   }
 
   const dbStart = performance.now();
@@ -76,13 +83,14 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabaseServer
     .from('inquiries')
     .select('id, created_at, customer_name, phone, contacted, note')
+    .eq('center_id', isAdmin.center_id)
     .order('created_at', { ascending: false });
   const dbMs = performance.now() - dbStart;
 
   if (error) {
     console.error(`[inquiries][GET] requestId=${requestId} error`, error);
     return jsonErrorResponse(
-      'ì¡°íšŒ ì‹¤íŒ¨',
+      'ì¡°íšŒ ?¤íŒ¨',
       requestId,
       { status: 500 },
       serializeSupabaseError(error)

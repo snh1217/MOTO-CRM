@@ -4,6 +4,12 @@ import type { NextRequest } from 'next/server';
 const TOKEN_COOKIE = 'admin_session';
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
 
+type AdminTokenPayload = {
+  role: 'admin';
+  userId: string;
+  centerId: string;
+};
+
 function getSecretKey() {
   const secret = process.env.SESSION_SECRET;
   if (!secret) {
@@ -12,9 +18,9 @@ function getSecretKey() {
   return new TextEncoder().encode(secret);
 }
 
-export async function signAdminToken() {
+export async function signAdminToken(payload: AdminTokenPayload) {
   const secret = getSecretKey();
-  return new SignJWT({ role: 'admin' })
+  return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(`${TOKEN_TTL_SECONDS}s`)
@@ -26,7 +32,10 @@ export async function verifyAdminToken(token: string) {
   const { payload } = await jwtVerify(token, secret, {
     algorithms: ['HS256']
   });
-  return payload.role === 'admin';
+  if (payload.role !== 'admin') {
+    throw new Error('Invalid role');
+  }
+  return payload as AdminTokenPayload;
 }
 
 export function getTokenFromRequest(request: NextRequest) {

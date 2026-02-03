@@ -3,6 +3,7 @@ import { getSupabaseServer } from '@/lib/supabase';
 import { phoneRegex, validateRequired } from '@/lib/validation';
 import { requireAdmin } from '@/lib/admin';
 import { normalizeVehicleNumber } from '@/lib/normalizeVehicleNumber';
+import { resolveCenterId } from '@/lib/centers';
 import {
   createRequestId,
   jsonErrorResponse,
@@ -38,22 +39,27 @@ export async function POST(request: NextRequest) {
 
     if (missing.length > 0) {
       return jsonErrorResponse(
-        `필수 값 누락: ${missing.join(', ')}`,
+        `?�수 �??�락: ${missing.join(', ')}`,
         requestId,
         { status: 400 }
       );
     }
 
     if (phone && !phoneRegex.test(phone)) {
-      return jsonErrorResponse('전화번호 형식이 올바르지 않습니다.', requestId, { status: 400 });
+      return jsonErrorResponse('?�화번호 ?�식???�바르�? ?�습?�다.', requestId, { status: 400 });
     }
 
     const mileageKm = Number(mileageRaw);
     if (Number.isNaN(mileageKm) || mileageKm < 0) {
-      return jsonErrorResponse('주행거리 값을 확인해주세요.', requestId, { status: 400 });
+      return jsonErrorResponse('주행거리 값을 ?�인?�주?�요.', requestId, { status: 400 });
     }
 
     const supabaseServer = getSupabaseServer();
+    const centerId = await resolveCenterId(request);
+    if (!centerId) {
+      return jsonErrorResponse('���� ������ Ȯ���� �� �����ϴ�.', requestId, { status: 400 });
+    }
+
     let vinUrl: string | null = null;
     let engineUrl: string | null = null;
 
@@ -66,7 +72,7 @@ export async function POST(request: NextRequest) {
       if (vinUpload.error) {
         console.error(`[as][POST] requestId=${requestId} vin upload error`, vinUpload.error);
         return jsonErrorResponse(
-          'VIN 업로드 실패',
+          'VIN ?�로???�패',
           requestId,
           { status: 500 },
           serializeSupabaseError(vinUpload.error),
@@ -86,7 +92,7 @@ export async function POST(request: NextRequest) {
       if (engineUpload.error) {
         console.error(`[as][POST] requestId=${requestId} engine upload error`, engineUpload.error);
         return jsonErrorResponse(
-          '엔진 업로드 실패',
+          '?�진 ?�로???�패',
           requestId,
           { status: 500 },
           serializeSupabaseError(engineUpload.error),
@@ -102,6 +108,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabaseServer
       .from('as_receipts')
       .insert({
+        center_id: centerId,
         vehicle_name: vehicleName,
         vehicle_number: vehicleNumber,
         mileage_km: mileageKm,
@@ -119,7 +126,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error(`[as][POST] requestId=${requestId} db insert error`, error);
       return jsonErrorResponse(
-        '저장 실패',
+        '?�???�패',
         requestId,
         { status: 500 },
         serializeSupabaseError(error),
@@ -146,7 +153,7 @@ export async function POST(request: NextRequest) {
     if (profileError) {
       console.error(`[as][POST] requestId=${requestId} profile upsert error`, profileError);
       return jsonErrorResponse(
-        '차량 정보 최신화 실패',
+        '차량 ?�보 최신???�패',
         requestId,
         { status: 500 },
         serializeSupabaseError(profileError),
@@ -156,7 +163,7 @@ export async function POST(request: NextRequest) {
 
     return jsonResponse(
       {
-        message: 'A/S 접수가 등록되었습니다. 고객/차량 정보가 최신으로 저장됩니다.',
+        message: 'A/S ?�수가 ?�록?�었?�니?? 고객/차량 ?�보가 최신?�로 ?�?�됩?�다.',
         data
       },
       { status: 200 },
@@ -164,7 +171,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error(`[as][POST] requestId=${requestId} unexpected error`, error);
-    return jsonErrorResponse('서버 오류가 발생했습니다.', requestId, { status: 500 });
+    return jsonErrorResponse('?�버 ?�류가 발생?�습?�다.', requestId, { status: 500 });
   }
 }
 
@@ -173,19 +180,20 @@ export async function GET(request: NextRequest) {
   console.log(`[as][GET] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
+    return jsonErrorResponse('?�증 ?�요', requestId, { status: 401 });
   }
 
   const supabaseServer = getSupabaseServer();
   const { data, error } = await supabaseServer
     .from('as_receipts')
     .select('*')
+    .eq('center_id', isAdmin.center_id)
     .order('created_at', { ascending: false });
 
   if (error) {
     console.error(`[as][GET] requestId=${requestId} error`, error);
     return jsonErrorResponse(
-      '조회 실패',
+      '조회 ?�패',
       requestId,
       { status: 500 },
       serializeSupabaseError(error)

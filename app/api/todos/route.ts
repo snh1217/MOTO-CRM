@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
     .from('todos')
     .select('date, items, updated_at')
     .eq('date', date)
+    .eq('center_id', isAdmin.center_id)
     .maybeSingle();
 
   if (error) {
@@ -63,10 +64,11 @@ export async function PUT(request: NextRequest) {
   const { data, error } = await supabaseServer
     .from('todos')
     .upsert({
+      center_id: isAdmin.center_id,
       date,
       items,
       updated_at: new Date().toISOString()
-    })
+    }, { onConflict: 'center_id,date' })
     .select('date, items')
     .single();
 

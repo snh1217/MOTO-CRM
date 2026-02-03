@@ -137,13 +137,13 @@ export default function ReceiptEditPage() {
 
     let index = 0;
     setSubmitStage(stages[index]);
-    addLog('submit', `단계 시작: ${stages[index]}`);
+    addLog('submit', `?�계 ?�작: ${stages[index]}`);
 
     stageTimerRef.current = setInterval(() => {
       if (index < stages.length - 1) {
         index += 1;
         setSubmitStage(stages[index]);
-        addLog('submit', `단계 이동: ${stages[index]}`);
+        addLog('submit', `?�계 ?�동: ${stages[index]}`);
       }
     }, 1200);
   };
@@ -152,12 +152,12 @@ export default function ReceiptEditPage() {
     const loadReceipt = async () => {
       const response = await fetch(`/api/receipts/${params.id}`);
       if (response.status === 401) {
-        router.replace('/admin');
+        router.replace('/');
         return;
       }
       const result = await response.json();
       if (!response.ok) {
-        setMessage(result.error || result.message || '접수 정보를 불러오지 못했습니다.');
+        setMessage(result.error || result.message || '?�수 ?�보�?불러?��? 못했?�니??');
         setErrorDetails({ requestId: result.requestId, status: response.status, body: result });
         return;
       }
@@ -226,8 +226,8 @@ export default function ReceiptEditPage() {
     if (!vehicleName) {
       setLoading(false);
       setSubmitStage('error');
-      setMessage('브랜드/모델을 선택해주세요.');
-      addLog('validation', '브랜드+모델 누락');
+      setMessage('브랜??모델???�택?�주?�요.');
+      addLog('validation', '브랜??모델 ?�락');
       clearStageTimer();
       return;
     }
@@ -252,7 +252,7 @@ export default function ReceiptEditPage() {
       payload.append('engine_image', engineImage);
     }
 
-    addLog('submit', '접수 수정 요청 시작');
+    addLog('submit', '?�수 ?�정 ?�청 ?�작');
 
     try {
       const response = await fetchWithTimeout(`/api/receipts/${params.id}`, {
@@ -265,25 +265,25 @@ export default function ReceiptEditPage() {
 
       if (!response.ok) {
         setSubmitStage('error');
-        setMessage(result.error || result.message || '접수 수정에 실패했습니다.');
+        setMessage(result.error || result.message || '?�수 ?�정???�패?�습?�다.');
         setErrorDetails({ requestId: result.requestId, status: response.status, body: result });
-        addLog('error', `수정 실패: ${result.error || result.message}`);
+        addLog('error', `?�정 ?�패: ${result.error || result.message}`);
         return;
       }
 
       setSubmitStage('done');
-      setMessage(result.message || '접수 수정이 완료되었습니다.');
+      setMessage(result.message || '?�수 ?�정???�료?�었?�니??');
       setReceipt(result.data);
-      addLog('success', '접수 수정 완료');
+      addLog('success', '?�수 ?�정 ?�료');
       setTimeout(() => router.push('/admin/receipts'), 800);
     } catch (error) {
       setSubmitStage('error');
       if (error instanceof DOMException && error.name === 'AbortError') {
-        setMessage('네트워크/서버 응답이 지연되고 있습니다. 다시 시도해주세요.');
-        addLog('timeout', '요청 타임아웃');
+        setMessage('?�트?�크/?�버 ?�답??지?�되�??�습?�다. ?�시 ?�도?�주?�요.');
+        addLog('timeout', '?�청 ?�?�아??);
       } else {
-        setMessage('요청 중 오류가 발생했습니다.');
-        addLog('error', '요청 처리 중 예외 발생');
+        setMessage('?�청 �??�류가 발생?�습?�다.');
+        addLog('error', '?�청 처리 �??�외 발생');
       }
       setErrorDetails({ error });
     } finally {
@@ -295,15 +295,15 @@ export default function ReceiptEditPage() {
   const stageLabel = useMemo(() => {
     switch (submitStage) {
       case 'vin':
-        return 'VIN 이미지 업로드 중...';
+        return 'VIN ?��?지 ?�로??�?..';
       case 'engine':
-        return '엔진 이미지 업로드 중...';
+        return '?�진 ?��?지 ?�로??�?..';
       case 'db':
-        return 'DB 저장 중...';
+        return 'DB ?�??�?..';
       case 'done':
-        return '저장 완료';
+        return '?�???�료';
       case 'error':
-        return '오류 발생';
+        return '?�류 발생';
       default:
         return null;
     }
@@ -317,11 +317,11 @@ export default function ReceiptEditPage() {
       <main className="space-y-6">
         <Nav />
         <section className="rounded-xl bg-white p-6 shadow-sm">
-          <p className="text-sm text-slate-500">{message ?? '접수 정보를 불러오는 중...'}</p>
+          <p className="text-sm text-slate-500">{message ?? '?�수 ?�보�?불러?�는 �?..'}</p>
           {errorDetails && (
             <details className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
               <summary className="cursor-pointer text-xs font-medium text-slate-600">
-                오류 상세 보기
+                ?�류 ?�세 보기
               </summary>
               <pre className="mt-2 whitespace-pre-wrap break-words text-[11px]">
                 {JSON.stringify(errorDetails, null, 2)}
@@ -339,8 +339,8 @@ export default function ReceiptEditPage() {
         <Nav />
         <section className="rounded-xl bg-white p-6 shadow-sm">
           <div className="mb-6">
-            <h2 className="text-lg font-semibold">접수 수정</h2>
-            <p className="text-sm text-slate-500">필수 항목만 입력해도 저장됩니다.</p>
+            <h2 className="text-lg font-semibold">?�수 ?�정</h2>
+            <p className="text-sm text-slate-500">?�수 ??���??�력?�도 ?�?�됩?�다.</p>
           </div>
           <form
             onSubmit={(event) => {
@@ -350,7 +350,7 @@ export default function ReceiptEditPage() {
             className="space-y-5"
           >
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">차량 정보</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">차량 ?�보</p>
               <div className="flex flex-wrap gap-2">
                 {BRANDS.map((brandOption) => (
                   <button
@@ -393,7 +393,7 @@ export default function ReceiptEditPage() {
                 </div>
               )}
               <label className="flex flex-col gap-1 text-sm">
-                모델 선택 (필수)
+                모델 ?�택 (?�수)
                 <select
                   className={inputClassName}
                   value={model}
@@ -402,7 +402,7 @@ export default function ReceiptEditPage() {
                   disabled={brand === 'ZT' && !ztType}
                 >
                   <option value="">
-                    {brand === 'ZT' && !ztType ? '종류를 먼저 선택하세요' : '모델을 선택하세요'}
+                    {brand === 'ZT' && !ztType ? '종류�?먼�? ?�택?�세?? : '모델???�택?�세??}
                   </option>
                   {models.map((item) => (
                     <option key={item} value={item}>
@@ -413,7 +413,7 @@ export default function ReceiptEditPage() {
               </label>
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="flex flex-col gap-1 text-sm">
-                  차량번호 (필수)
+                  차량번호 (?�수)
                   <input
                     className={inputClassName}
                     value={form.vehicleNumber}
@@ -424,7 +424,7 @@ export default function ReceiptEditPage() {
                   />
                 </label>
                 <label className="flex flex-col gap-1 text-sm">
-                  주행거리 (km) (필수)
+                  주행거리 (km) (?�수)
                   <input
                     type="number"
                     className={inputClassName}
@@ -439,10 +439,10 @@ export default function ReceiptEditPage() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">고객 정보</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">고객 ?�보</p>
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="flex flex-col gap-1 text-sm">
-                  성명
+                  ?�명
                   <input
                     className={inputClassName}
                     value={form.customerName}
@@ -452,7 +452,7 @@ export default function ReceiptEditPage() {
                   />
                 </label>
                 <label className="flex flex-col gap-1 text-sm">
-                  전화번호
+                  ?�화번호
                   <input
                     className={inputClassName}
                     value={form.phone}
@@ -463,7 +463,7 @@ export default function ReceiptEditPage() {
                   />
                 </label>
                 <label className="flex flex-col gap-1 text-sm">
-                  구입일자
+                  구입?�자
                   <input
                     type="date"
                     className={inputClassName}
@@ -474,27 +474,27 @@ export default function ReceiptEditPage() {
                   />
                 </label>
                 <label className="flex flex-col gap-1 text-sm">
-                  선택된 차종
+                  ?�택??차종
                   <input className={`${inputClassName} bg-slate-50 text-slate-500`} value={vehicleName} readOnly />
                 </label>
               </div>
             </div>
 
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">사진</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">?�진</p>
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-sm font-medium">VIN 사진</div>
+                  <div className="text-sm font-medium">VIN ?�진</div>
                   {receipt.vin_image_url ? (
                     <a
                       href={signedVinUrl ?? receipt.vin_image_url}
                       target="_blank"
                       className="text-xs text-slate-600 underline"
                     >
-                      기존 사진 보기
+                      기존 ?�진 보기
                     </a>
                   ) : (
-                    <p className="text-xs text-slate-400">등록된 사진 없음</p>
+                    <p className="text-xs text-slate-400">?�록???�진 ?�음</p>
                   )}
                   <input
                     type="file"
@@ -512,8 +512,7 @@ export default function ReceiptEditPage() {
                       onClick={() => setVinImage(null)}
                       className="text-xs text-slate-500 underline"
                     >
-                      재촬영/재선택
-                    </button>
+                      ?�촬???�선??                    </button>
                   )}
                   {receipt.vin_image_url && (
                     <label className="flex items-center gap-2 text-xs text-slate-500">
@@ -522,23 +521,23 @@ export default function ReceiptEditPage() {
                         checked={deleteVin}
                         onChange={(event) => setDeleteVin(event.target.checked)}
                       />
-                      기존 사진 삭제
+                      기존 ?�진 ??��
                     </label>
                   )}
-                  <p className="text-xs text-slate-500">{vinImage ? vinImage.name : '선택된 파일 없음'}</p>
+                  <p className="text-xs text-slate-500">{vinImage ? vinImage.name : '?�택???�일 ?�음'}</p>
                 </div>
                 <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-sm font-medium">엔진번호 사진</div>
+                  <div className="text-sm font-medium">?�진번호 ?�진</div>
                   {receipt.engine_image_url ? (
                     <a
                       href={signedEngineUrl ?? receipt.engine_image_url}
                       target="_blank"
                       className="text-xs text-slate-600 underline"
                     >
-                      기존 사진 보기
+                      기존 ?�진 보기
                     </a>
                   ) : (
-                    <p className="text-xs text-slate-400">등록된 사진 없음</p>
+                    <p className="text-xs text-slate-400">?�록???�진 ?�음</p>
                   )}
                   <input
                     type="file"
@@ -556,8 +555,7 @@ export default function ReceiptEditPage() {
                       onClick={() => setEngineImage(null)}
                       className="text-xs text-slate-500 underline"
                     >
-                      재촬영/재선택
-                    </button>
+                      ?�촬???�선??                    </button>
                   )}
                   {receipt.engine_image_url && (
                     <label className="flex items-center gap-2 text-xs text-slate-500">
@@ -566,18 +564,18 @@ export default function ReceiptEditPage() {
                         checked={deleteEngine}
                         onChange={(event) => setDeleteEngine(event.target.checked)}
                       />
-                      기존 사진 삭제
+                      기존 ?�진 ??��
                     </label>
                   )}
                   <p className="text-xs text-slate-500">
-                    {engineImage ? engineImage.name : '선택된 파일 없음'}
+                    {engineImage ? engineImage.name : '?�택???�일 ?�음'}
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">정비 내용</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">?�비 ?�용</p>
               <label className="flex flex-col gap-1 text-sm">
                 증상
                 <textarea
@@ -590,7 +588,7 @@ export default function ReceiptEditPage() {
               </label>
 
               <label className="flex flex-col gap-1 text-sm">
-                정비내용
+                ?�비?�용
                 <textarea
                   className="min-h-[96px] rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                   value={form.serviceDetail}
@@ -601,7 +599,7 @@ export default function ReceiptEditPage() {
               </label>
             </div>
 
-            {stageLabel && <p className="text-xs text-slate-500">진행 단계: {stageLabel}</p>}
+            {stageLabel && <p className="text-xs text-slate-500">진행 ?�계: {stageLabel}</p>}
             {message && (
               <div className={messageClassName}>
                 <p>{message}</p>
@@ -612,7 +610,7 @@ export default function ReceiptEditPage() {
             {errorDetails && (
               <details className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
                 <summary className="cursor-pointer text-xs font-medium text-slate-600">
-                  오류 상세 보기
+                  ?�류 ?�세 보기
                 </summary>
                 <pre className="mt-2 whitespace-pre-wrap break-words text-[11px]">
                   {JSON.stringify(errorDetails, null, 2)}
@@ -626,21 +624,21 @@ export default function ReceiptEditPage() {
                 onClick={() => router.push('/admin/receipts')}
                 className="h-10 rounded-lg border border-slate-200 px-4 text-sm text-slate-600"
               >
-                목록으로
+                목록?�로
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="h-11 rounded-lg bg-slate-900 px-5 text-sm font-medium text-white disabled:opacity-50"
               >
-                {loading ? '저장 중...' : '수정 저장'}
+                {loading ? '?�??�?..' : '?�정 ?�??}
               </button>
             </div>
           </form>
         </section>
       </main>
       {showDebugPanel && (
-        <DebugPanel logs={logs} title="접수 수정 로그" onClear={() => setLogs([])} />
+        <DebugPanel logs={logs} title="?�수 ?�정 로그" onClear={() => setLogs([])} />
       )}
     </>
   );

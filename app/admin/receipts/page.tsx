@@ -1,10 +1,11 @@
-ï»¿'use client';
+'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 import { getStoragePathFromUrl } from '@/lib/storagePath';
+import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 
 interface Receipt {
   id: string;
@@ -32,13 +33,17 @@ export default function ReceiptsAdminPage() {
   const [modalError, setModalError] = useState<string | null>(null);
   const [modalRequestId, setModalRequestId] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Receipt | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const fetchReceipts = async () => {
       const response = await fetch('/api/receipts');
       if (response.status === 401) {
-        router.replace('/admin');
+        router.replace('/');
         return;
       }
       const result = await response.json();
@@ -61,7 +66,7 @@ export default function ReceiptsAdminPage() {
 
   const handleExitAdmin = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
-    router.replace('/admin');
+    router.replace('/');
   };
 
   const openImage = async (rawUrl: string | null, title: string) => {
@@ -81,7 +86,7 @@ export default function ReceiptsAdminPage() {
         );
         const result = await response.json();
         if (!response.ok) {
-          setModalError(result.error || result.message || 'ì´ë¯¸ì§€ URL ìƒì„± ì‹¤íŒ¨');
+          setModalError(result.error || result.message || 'ÀÌ¹ÌÁö URL »ı¼º ½ÇÆĞ');
           setModalRequestId(result.requestId || null);
         } else if (result.signedUrl) {
           finalUrl = result.signedUrl;
@@ -89,9 +94,41 @@ export default function ReceiptsAdminPage() {
       }
       setModalImage({ url: finalUrl, title });
     } catch (error) {
-      setModalError('ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨');
+      setModalError('ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ');
     } finally {
       setImageLoading(false);
+    }
+  };
+
+  const openDeleteConfirm = (receipt: Receipt) => {
+    setDeleteTarget(receipt);
+    setDeleteError(null);
+    setDeleteRequestId(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    setDeleteError(null);
+    setDeleteRequestId(null);
+
+    try {
+      const response = await fetchWithTimeout(`/api/receipts/${deleteTarget.id}`, { method: 'DELETE' }, 12000);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setDeleteError(result.error || result.message || '»èÁ¦ ½ÇÆĞ');
+        setDeleteRequestId(result.requestId || null);
+        return;
+      }
+      setReceipts((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      if (selected?.id === deleteTarget.id) {
+        setSelected(null);
+      }
+      setDeleteTarget(null);
+    } catch (error) {
+      setDeleteError('»èÁ¦ ½ÇÆĞ');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -101,13 +138,13 @@ export default function ReceiptsAdminPage() {
       <section className="rounded-xl bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-lg font-semibold">ì ‘ìˆ˜ ë‚´ì—­</h2>
-            <p className="text-sm text-slate-500">ì´ {receipts.length}ê±´</p>
+            <h2 className="text-lg font-semibold">Á¢¼ö ³»¿ª</h2>
+            <p className="text-sm text-slate-500">ÃÑ {receipts.length}°Ç</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <input
               className="rounded-md border border-slate-200 px-3 py-2 text-sm"
-              placeholder="ê³ ê°ëª…/ì°¨ëŸ‰ë²ˆí˜¸ ê²€ìƒ‰"
+              placeholder="°í°´¸í/Â÷·®¹øÈ£ °Ë»ö"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -115,20 +152,20 @@ export default function ReceiptsAdminPage() {
               href="/api/receipts/export"
               className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
             >
-              ì—‘ì…€ ë‹¤ìš´ë¡œë“œ
+              ¿¢¼¿ ´Ù¿î·Îµå
             </a>
             <button
               type="button"
               onClick={handleExitAdmin}
               className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600"
             >
-              ê´€ë¦¬ì ëª¨ë“œ í•´ì œ
+              ·Î±×¾Æ¿ô
             </button>
           </div>
         </div>
 
         {loading ? (
-          <p className="mt-6 text-sm text-slate-500">ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘...</p>
+          <p className="mt-6 text-sm text-slate-500">ºÒ·¯¿À´Â Áß...</p>
         ) : (
           <>
             <div className="mt-6 space-y-3 md:hidden">
@@ -141,7 +178,7 @@ export default function ReceiptsAdminPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm font-semibold">{receipt.customer_name || '??? ??'}</p>
+                      <p className="text-sm font-semibold">{receipt.customer_name || '°í°´ ¹ÌÀÔ·Â'}</p>
                       <p className="text-xs text-slate-500">
                         {new Date(receipt.created_at).toLocaleDateString('ko-KR')}
                       </p>
@@ -151,56 +188,80 @@ export default function ReceiptsAdminPage() {
                   <p className="mt-2 text-sm text-slate-700">{receipt.vehicle_name}</p>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-sm">{receipt.phone || '-'}</span>
-                    <Link
-                      href={`/admin/receipts/${receipt.id}/edit`}
-                      onClick={(event) => event.stopPropagation()}
-                      className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600"
-                    >
-                      ??
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/admin/receipts/${receipt.id}/edit`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600"
+                      >
+                        ¼öÁ¤
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openDeleteConfirm(receipt);
+                        }}
+                        className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600"
+                      >
+                        »èÁ¦
+                      </button>
+                    </div>
                   </div>
                 </button>
               ))}
             </div>
             <div className="mt-6 hidden overflow-x-auto md:block">
               <table className="min-w-full border-collapse text-sm">
-              <thead className="border-b border-slate-200 text-left">
-                <tr>
-                  <th className="py-2 pr-4">ë“±ë¡ì¼</th>
-                  <th className="py-2 pr-4">ì°¨ëª…</th>
-                  <th className="py-2 pr-4">ì°¨ëŸ‰ë²ˆí˜¸</th>
-                  <th className="py-2 pr-4">ê³ ê°ëª…</th>
-                  <th className="py-2 pr-4">ì „í™”ë²ˆí˜¸</th>
-                  <th className="py-2 pr-4">ì‘ì—…</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((receipt) => (
-                  <tr
-                    key={receipt.id}
-                    className="cursor-pointer border-b border-slate-100 hover:bg-slate-50"
-                    onClick={() => setSelected(receipt)}
-                  >
-                    <td className="py-2 pr-4">
-                      {new Date(receipt.created_at).toLocaleDateString('ko-KR')}
-                    </td>
-                    <td className="py-2 pr-4">{receipt.vehicle_name}</td>
-                    <td className="py-2 pr-4">{receipt.vehicle_number}</td>
-                    <td className="py-2 pr-4">{receipt.customer_name || '-'}</td>
-                    <td className="py-2 pr-4">{receipt.phone || '-'}</td>
-                    <td className="py-2 pr-4">
-                      <Link
-                        href={`/admin/receipts/${receipt.id}/edit`}
-                        onClick={(event) => event.stopPropagation()}
-                        className="rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-slate-300"
-                      >
-                        ìˆ˜ì •
-                      </Link>
-                    </td>
+                <thead className="border-b border-slate-200 text-left">
+                  <tr>
+                    <th className="py-2 pr-4">µî·ÏÀÏ</th>
+                    <th className="py-2 pr-4">Â÷¸í</th>
+                    <th className="py-2 pr-4">Â÷·®¹øÈ£</th>
+                    <th className="py-2 pr-4">°í°´¸í</th>
+                    <th className="py-2 pr-4">ÀüÈ­¹øÈ£</th>
+                    <th className="py-2 pr-4">ÀÛ¾÷</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map((receipt) => (
+                    <tr
+                      key={receipt.id}
+                      className="cursor-pointer border-b border-slate-100 hover:bg-slate-50"
+                      onClick={() => setSelected(receipt)}
+                    >
+                      <td className="py-2 pr-4">
+                        {new Date(receipt.created_at).toLocaleDateString('ko-KR')}
+                      </td>
+                      <td className="py-2 pr-4">{receipt.vehicle_name}</td>
+                      <td className="py-2 pr-4">{receipt.vehicle_number}</td>
+                      <td className="py-2 pr-4">{receipt.customer_name || '-'}</td>
+                      <td className="py-2 pr-4">{receipt.phone || '-'}</td>
+                      <td className="py-2 pr-4">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/admin/receipts/${receipt.id}/edit`}
+                            onClick={(event) => event.stopPropagation()}
+                            className="rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-slate-300"
+                          >
+                            ¼öÁ¤
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openDeleteConfirm(receipt);
+                            }}
+                            className="rounded-md border border-red-200 px-3 py-1 text-xs text-red-600 hover:border-red-300"
+                          >
+                            »èÁ¦
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </>
         )}
@@ -209,51 +270,51 @@ export default function ReceiptsAdminPage() {
       {selected && (
         <section className="rounded-xl bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">ì ‘ìˆ˜ ìƒì„¸</h3>
+            <h3 className="text-lg font-semibold">Á¢¼ö »ó¼¼</h3>
             <button
               className="text-sm text-slate-500"
               onClick={() => setSelected(null)}
             >
-              ë‹«ê¸°
+              ´İ±â
             </button>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <div>
-              <p className="text-xs text-slate-500">ë“±ë¡ì¼</p>
+              <p className="text-xs text-slate-500">µî·ÏÀÏ</p>
               <p className="text-sm">
                 {new Date(selected.created_at).toLocaleString('ko-KR')}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">ì°¨ëª…</p>
+              <p className="text-xs text-slate-500">Â÷¸í</p>
               <p className="text-sm">{selected.vehicle_name}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">ì°¨ëŸ‰ë²ˆí˜¸</p>
+              <p className="text-xs text-slate-500">Â÷·®¹øÈ£</p>
               <p className="text-sm">{selected.vehicle_number}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">ì£¼í–‰ê±°ë¦¬</p>
+              <p className="text-xs text-slate-500">ÁÖÇà°Å¸®</p>
               <p className="text-sm">{selected.mileage_km} km</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">ê³ ê°ëª…</p>
+              <p className="text-xs text-slate-500">°í°´¸í</p>
               <p className="text-sm">{selected.customer_name || '-'}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">ì „í™”ë²ˆí˜¸</p>
+              <p className="text-xs text-slate-500">ÀüÈ­¹øÈ£</p>
               <p className="text-sm">{selected.phone || '-'}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">êµ¬ì…ì¼ì</p>
+              <p className="text-xs text-slate-500">±¸ÀÔÀÏÀÚ</p>
               <p className="text-sm">{selected.purchase_date || '-'}</p>
             </div>
             <div className="md:col-span-2">
-              <p className="text-xs text-slate-500">ì¦ìƒ</p>
+              <p className="text-xs text-slate-500">Áõ»ó</p>
               <p className="text-sm">{selected.symptom || '-'}</p>
             </div>
             <div className="md:col-span-2">
-              <p className="text-xs text-slate-500">ì •ë¹„ë‚´ìš©</p>
+              <p className="text-xs text-slate-500">Á¤ºñ³»¿ë</p>
               <p className="text-sm">{selected.service_detail || '-'}</p>
             </div>
           </div>
@@ -261,29 +322,29 @@ export default function ReceiptsAdminPage() {
             {selected.vin_image_url ? (
               <button
                 type="button"
-                onClick={() => openImage(selected.vin_image_url, 'VIN ì‚¬ì§„')}
+                onClick={() => openImage(selected.vin_image_url, 'VIN »çÁø')}
                 className="flex items-center justify-between rounded-lg border border-slate-200 p-3 text-sm hover:border-slate-300"
               >
-                <span>VIN ì‚¬ì§„ í¬ê²Œ ë³´ê¸°</span>
-                <span className="text-xs text-slate-400">í´ë¦­</span>
+                <span>VIN »çÁø Å©°Ô º¸±â</span>
+                <span className="text-xs text-slate-400">Å¬¸¯</span>
               </button>
             ) : (
               <div className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-400">
-                VIN ì‚¬ì§„ ì—†ìŒ
+                VIN »çÁø ¾øÀ½
               </div>
             )}
             {selected.engine_image_url ? (
               <button
                 type="button"
-                onClick={() => openImage(selected.engine_image_url, 'ì—”ì§„ë²ˆí˜¸ ì‚¬ì§„')}
+                onClick={() => openImage(selected.engine_image_url, '¿£Áø¹øÈ£ »çÁø')}
                 className="flex items-center justify-between rounded-lg border border-slate-200 p-3 text-sm hover:border-slate-300"
               >
-                <span>ì—”ì§„ë²ˆí˜¸ ì‚¬ì§„ í¬ê²Œ ë³´ê¸°</span>
-                <span className="text-xs text-slate-400">í´ë¦­</span>
+                <span>¿£Áø¹øÈ£ »çÁø Å©°Ô º¸±â</span>
+                <span className="text-xs text-slate-400">Å¬¸¯</span>
               </button>
             ) : (
               <div className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-400">
-                ì—”ì§„ë²ˆí˜¸ ì‚¬ì§„ ì—†ìŒ
+                ¿£Áø¹øÈ£ »çÁø ¾øÀ½
               </div>
             )}
           </div>
@@ -305,11 +366,11 @@ export default function ReceiptsAdminPage() {
                 className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600"
                 onClick={() => setModalImage(null)}
               >
-                ë‹«ê¸°
+                ´İ±â
               </button>
             </div>
             {imageLoading ? (
-              <p className="text-sm text-slate-500">ì´ë¯¸ì§€ ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘...</p>
+              <p className="text-sm text-slate-500">ÀÌ¹ÌÁö ºÒ·¯¿À´Â Áß...</p>
             ) : (
               <div className="max-h-[80vh] overflow-auto">
                 <img
@@ -328,7 +389,58 @@ export default function ReceiptsAdminPage() {
           </div>
         </div>
       )}
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setDeleteTarget(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-xl bg-white p-5 shadow-lg"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h4 className="text-base font-semibold">Á¢¼ö »èÁ¦</h4>
+            <p className="mt-2 text-sm text-slate-600">
+              »èÁ¦ ÈÄ º¹±¸ÇÒ ¼ö ¾ø½À´Ï´Ù. Á¤¸» »èÁ¦ÇÏ½Ã°Ú½À´Ï±î?
+            </p>
+            <div className="mt-4 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
+              {deleteTarget.vehicle_name} ¡¤ {deleteTarget.vehicle_number}
+            </div>
+            {deleteError && (
+              <p className="mt-3 text-xs text-red-500">
+                {deleteError}
+                {deleteRequestId && <span className="ml-2">requestId: {deleteRequestId}</span>}
+              </p>
+            )}
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-600"
+                disabled={deleteLoading}
+              >
+                Ãë¼Ò
+              </button>
+              {deleteError && !deleteLoading && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600"
+                >
+                  Àç½Ãµµ
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="rounded-md bg-red-600 px-4 py-1.5 text-sm text-white disabled:opacity-60"
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? '»èÁ¦Áß...' : '»èÁ¦'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
-

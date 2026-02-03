@@ -132,7 +132,7 @@ export default function InquiriesAdminPage() {
       const response = await fetch(listUrl);
       const fetchMs = performance.now() - fetchStart;
       if (response.status === 401) {
-        router.replace('/admin');
+        router.replace('/');
         return;
       }
       const jsonStart = performance.now();
@@ -271,7 +271,7 @@ export default function InquiriesAdminPage() {
       const response = await fetchWithTimeout(detailUrl);
       const fetchMs = performance.now() - fetchStart;
       if (response.status === 401) {
-        router.replace('/admin');
+        router.replace('/');
         return;
       }
       const jsonStart = performance.now();
@@ -356,7 +356,7 @@ export default function InquiriesAdminPage() {
 
   const handleExitAdmin = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
-    router.replace('/admin');
+    router.replace('/');
   };
 
   const listBottleneck = debugMode ? inferBottleneck(listPerf, previousListTotal) : null;
