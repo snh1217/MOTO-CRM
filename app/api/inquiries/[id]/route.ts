@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server';
+﻿import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin';
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const isAdmin = await requireAdmin(request);
   const authMs = performance.now() - authStart;
   if (!isAdmin) {
-    return jsonErrorResponse('?�증 ?�요', requestId, { status: 401 });
+    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
   }
 
   const dbStart = performance.now();
@@ -26,12 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   if (error) {
     console.error(`[inquiries][DETAIL] requestId=${requestId} error`, error);
-    return jsonErrorResponse(
-      '조회 ?�패',
-      requestId,
-      { status: 500 },
-      serializeSupabaseError(error)
-    );
+    return jsonErrorResponse('조회 실패', requestId, { status: 500 }, serializeSupabaseError(error));
   }
 
   const serializeStart = performance.now();
@@ -50,9 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     `[inquiries][DETAIL] requestId=${requestId} total=${timings.t_total_ms} auth=${timings.t_auth_ms} db=${timings.t_db_ms} serialize=${timings.t_serialize_ms} count=${data ? 1 : 0} bytes=${payloadBytes}`
   );
 
-  const responseBody = debug
-    ? { requestId, data, timings }
-    : { requestId, data };
+  const responseBody = debug ? { requestId, data, timings } : { requestId, data };
   const response = NextResponse.json(responseBody, { status: 200 });
   response.headers.set('x-request-id', requestId);
   response.headers.set(
@@ -68,7 +61,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   console.log(`[inquiries][PATCH] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('?�증 ?�요', requestId, { status: 401 });
+    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
   }
 
   const body = await request.json();
@@ -84,7 +77,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   if (Object.keys(updates).length === 0) {
-    return jsonErrorResponse('No fields to update.', requestId, { status: 400 });
+    return jsonErrorResponse('업데이트할 값이 없습니다.', requestId, { status: 400 });
   }
 
   const supabaseServer = getSupabaseServer();
@@ -99,12 +92,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   if (error) {
     console.error(`[inquiries][PATCH] requestId=${requestId} error`, error);
     return jsonErrorResponse(
-      '?�데?�트 ?�패',
+      '업데이트 실패',
       requestId,
       { status: 500 },
       serializeSupabaseError(error)
     );
   }
 
-  return jsonResponse({ message: '?�데?�트 ?�료', data }, { status: 200 }, requestId);
+  return jsonResponse({ message: '업데이트 완료', data }, { status: 200 }, requestId);
 }
