@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server';
+ï»¿import type { NextRequest } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin';
 import { createRequestId, jsonErrorResponse, jsonResponse, serializeSupabaseError } from '@/lib/apiUtils';
@@ -15,12 +15,12 @@ export async function GET(request: NextRequest) {
   console.log(`[todos][GET] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('·Î±×ÀÎÀÌ ÇÊ¿äÇÕ´Ï´Ù.', requestId, { status: 401 });
+    return jsonErrorResponse('ë¡œê·¸ì¸ì´ í•„ìš”í•©ë‹ˆë‹¤.', requestId, { status: 401 });
   }
 
   const date = request.nextUrl.searchParams.get('date') ?? '';
   if (!isValidDate(date)) {
-    return jsonErrorResponse('Àß¸øµÈ ³¯Â¥ Çü½ÄÀÔ´Ï´Ù.', requestId, { status: 400 });
+    return jsonErrorResponse('ì˜ëª»ëœ ë‚ ì§œ í˜•ì‹ì…ë‹ˆë‹¤.', requestId, { status: 400 });
   }
 
   const supabaseServer = getSupabaseServer();
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error(`[todos][GET] requestId=${requestId} error`, error);
-    return jsonErrorResponse('Á¶È¸¿¡ ½ÇÆĞÇß½À´Ï´Ù.', requestId, { status: 500 }, serializeSupabaseError(error));
+    return jsonErrorResponse('ì¡°íšŒì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.', requestId, { status: 500 }, serializeSupabaseError(error));
   }
 
   const totalMs = Math.round(performance.now() - startedAt);
@@ -57,7 +57,7 @@ export async function PUT(request: NextRequest) {
   console.log(`[todos][PUT] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('·Î±×ÀÎÀÌ ÇÊ¿äÇÕ´Ï´Ù.', requestId, { status: 401 });
+    return jsonErrorResponse('ë¡œê·¸ì¸ì´ í•„ìš”í•©ë‹ˆë‹¤.', requestId, { status: 401 });
   }
 
   const body = await request.json().catch(() => ({}));
@@ -65,24 +65,27 @@ export async function PUT(request: NextRequest) {
   const items = Array.isArray(body.items) ? body.items.map((item: unknown) => String(item)) : [];
 
   if (!isValidDate(date)) {
-    return jsonErrorResponse('Àß¸øµÈ ³¯Â¥ Çü½ÄÀÔ´Ï´Ù.', requestId, { status: 400 });
+    return jsonErrorResponse('ì˜ëª»ëœ ë‚ ì§œ í˜•ì‹ì…ë‹ˆë‹¤.', requestId, { status: 400 });
   }
 
   const supabaseServer = getSupabaseServer();
   const { data, error } = await supabaseServer
     .from('todos')
-    .upsert({
-      center_id: isAdmin.center_id,
-      date,
-      items,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'center_id,date' })
+    .upsert(
+      {
+        center_id: isAdmin.center_id,
+        date,
+        items,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: 'center_id,date' }
+    )
     .select('date, items')
     .single();
 
   if (error) {
     console.error(`[todos][PUT] requestId=${requestId} error`, error);
-    return jsonErrorResponse('ÀúÀå¿¡ ½ÇÆĞÇß½À´Ï´Ù.', requestId, { status: 500 }, serializeSupabaseError(error));
+    return jsonErrorResponse('ì €ì¥ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.', requestId, { status: 500 }, serializeSupabaseError(error));
   }
 
   const totalMs = Math.round(performance.now() - startedAt);
