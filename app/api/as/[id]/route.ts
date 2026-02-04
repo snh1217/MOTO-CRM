@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   console.log(`[as][GET:ID] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('?�증 ?�요', requestId, { status: 401 });
+    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
   }
 
   const supabaseServer = getSupabaseServer();
@@ -31,12 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   if (error) {
     console.error(`[as][GET:ID] requestId=${requestId} error`, error);
-    return jsonErrorResponse(
-      '조회 ?�패',
-      requestId,
-      { status: 500 },
-      serializeSupabaseError(error)
-    );
+    return jsonErrorResponse('조회 실패', requestId, { status: 500 }, serializeSupabaseError(error));
   }
 
   return jsonResponse({ data }, { status: 200 }, requestId);
@@ -47,7 +42,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   console.log(`[as][PATCH] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('?�증 ?�요', requestId, { status: 401 });
+    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
   }
 
   try {
@@ -62,7 +57,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (existingError || !existing) {
       console.error(`[as][PATCH] requestId=${requestId} fetch error`, existingError);
       return jsonErrorResponse(
-        '기존 A/S ?�보�?불러?��? 못했?�니??',
+        '기존 A/S 정보를 불러오지 못했습니다.',
         requestId,
         { status: 500 },
         serializeSupabaseError(existingError)
@@ -91,20 +86,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     });
 
     if (missing.length > 0) {
-      return jsonErrorResponse(
-        `?�수 �??�락: ${missing.join(', ')}`,
-        requestId,
-        { status: 400 }
-      );
+      return jsonErrorResponse(`필수 값 누락: ${missing.join(', ')}`, requestId, { status: 400 });
     }
 
     if (phone && !phoneRegex.test(phone)) {
-      return jsonErrorResponse('?�화번호 ?�식???�바르�? ?�습?�다.', requestId, { status: 400 });
+      return jsonErrorResponse('전화번호 형식이 올바르지 않습니다.', requestId, { status: 400 });
     }
 
     const mileageKm = Number(mileageRaw);
     if (Number.isNaN(mileageKm) || mileageKm < 0) {
-      return jsonErrorResponse('주행거리 값을 ?�인?�주?�요.', requestId, { status: 400 });
+      return jsonErrorResponse('주행거리 값을 확인해 주세요.', requestId, { status: 400 });
     }
 
     let vinUrl = existing.vin_image_url as string | null;
@@ -135,7 +126,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       if (vinUpload.error) {
         console.error(`[as][PATCH] requestId=${requestId} vin upload error`, vinUpload.error);
         return jsonErrorResponse(
-          'VIN ?�로???�패',
+          'VIN 업로드 실패',
           requestId,
           { status: 500 },
           serializeSupabaseError(vinUpload.error),
@@ -148,14 +139,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     if (engineImage) {
       const enginePath = `as/engine/${crypto.randomUUID()}-${engineImage.name}`;
-      const engineUpload = await supabaseServer.storage.from(BUCKET).upload(enginePath, engineImage, {
-        contentType: engineImage.type
-      });
+      const engineUpload = await supabaseServer
+        .storage
+        .from(BUCKET)
+        .upload(enginePath, engineImage, {
+          contentType: engineImage.type
+        });
 
       if (engineUpload.error) {
         console.error(`[as][PATCH] requestId=${requestId} engine upload error`, engineUpload.error);
         return jsonErrorResponse(
-          '?�진 ?�로???�패',
+          '엔진 업로드 실패',
           requestId,
           { status: 500 },
           serializeSupabaseError(engineUpload.error),
@@ -188,7 +182,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (error) {
       console.error(`[as][PATCH] requestId=${requestId} db update error`, error);
       return jsonErrorResponse(
-        '?�정 ?�???�패',
+        '수정 저장 실패',
         requestId,
         { status: 500 },
         serializeSupabaseError(error),
@@ -216,7 +210,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (profileError) {
       console.error(`[as][PATCH] requestId=${requestId} profile upsert error`, profileError);
       return jsonErrorResponse(
-        '차량 ?�보 최신???�패',
+        '차량 정보 최신화 실패',
         requestId,
         { status: 500 },
         serializeSupabaseError(profileError),
@@ -226,7 +220,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     return jsonResponse(
       {
-        message: 'A/S ?�정???�료?�었?�니?? 고객/차량 ?�보가 최신?�로 ?�?�됩?�다.',
+        message: 'A/S 수정이 완료되었습니다. 고객/차량 정보가 최신으로 갱신됩니다.',
         data: updated
       },
       { status: 200 },
@@ -234,6 +228,6 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     );
   } catch (error) {
     console.error(`[as][PATCH] requestId=${requestId} unexpected error`, error);
-    return jsonErrorResponse('?�버 ?�류가 발생?�습?�다.', requestId, { status: 500 });
+    return jsonErrorResponse('서버 오류가 발생했습니다.', requestId, { status: 500 });
   }
 }

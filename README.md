@@ -195,3 +195,11 @@ If you use Supabase CLI migrations:
 1) Open `/` and add a Today item, save, refresh.
 2) Add a Tomorrow item and confirm it appears under the correct date.
 3) Change system date to tomorrow and confirm yesterday's tomorrow list becomes today's list.
+
+## UI 로컬라이징/오류 확인 체크리스트
+
+1) 홈/접수/문의/A/S/관리자 화면에서 한글이 깨지지 않는다(?? 없음).
+2) 홈(투두) 로딩 실패 시 한국어 오류 문구 + requestId가 표시된다.
+3) 모바일에서 버튼이 세로로 줄바꿈되지 않는다(예: \"수정\").
+4) 문의/접수/A/S 목록 및 상세에서 모든 버튼/라벨이 한글로 표시된다.
+5) 문의 상세 메모 저장 실패 시 한국어 오류 + requestId가 표시되고 재시도 가능하다.

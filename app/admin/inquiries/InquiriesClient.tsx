@@ -1,6 +1,5 @@
 'use client';
 
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
@@ -75,22 +74,22 @@ function inferBottleneck(perf: PerfState | null, previousTotal: number | null) {
   const serialize = serverTimings.serialize ?? 0;
 
   if (db > 500 || (total > 0 && db / total > 0.6)) {
-    return 'DB likely slow (query time dominates).';
+    return 'DB 지연 가능성이 높습니다 (쿼리 시간이 대부분을 차지).';
   }
 
   if ((payloadBytes ?? 0) > 50000 && jsonMs > 120) {
-    return 'Payload/parse likely slow (large response + JSON parse time).';
+    return '응답 크기/파싱 지연 가능성이 있습니다 (payload가 큼).';
   }
 
   if (total > 800 && db + auth + serialize < total * 0.5) {
-    return 'Cold start/runtime overhead likely (server total is large without DB/auth time).';
+    return '콜드 스타트/런타임 오버헤드 가능성이 높습니다.';
   }
 
   if (previousTotal && total > previousTotal * 2) {
-    return 'Cold start/runtime overhead likely (first request much slower).';
+    return '첫 요청이 느려 콜드 스타트 가능성이 있습니다.';
   }
 
-  return 'No obvious bottleneck detected.';
+  return '뚜렷한 병목이 감지되지 않았습니다.';
 }
 
 export default function InquiriesAdminPage() {
@@ -279,7 +278,7 @@ export default function InquiriesAdminPage() {
       const jsonMs = performance.now() - jsonStart;
 
       if (!response.ok) {
-        setDetailError(result.error || '?? ??? ???? ?????.');
+        setDetailError(result.error || '상세 정보를 불러오지 못했습니다.');
         return;
       }
 
@@ -299,9 +298,9 @@ export default function InquiriesAdminPage() {
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
-        setDetailError('?? ??? ???????. ?? ??? ???.');
+        setDetailError('네트워크/서버 응답이 지연되고 있습니다. 다시 시도해 주세요.');
       } else {
-        setDetailError('?? ??? ???? ? ??? ??????.');
+        setDetailError('상세 요청 중 오류가 발생했습니다.');
       }
     } finally {
       if (detailSlowTimerRef.current) {
@@ -329,7 +328,7 @@ export default function InquiriesAdminPage() {
       setNoteRequestId(result.requestId || null);
 
       if (!response.ok) {
-        setNoteError(result.error || '?? ??? ??????.');
+        setNoteError(result.error || '메모 저장에 실패했습니다.');
         setNoteRetry(true);
         return;
       }
@@ -341,12 +340,12 @@ export default function InquiriesAdminPage() {
       }) as InquiryDetail;
       setSelectedDetail(updated);
       updateInquiryFromDetail(updated);
-      setNoteSuccess('??? ???????.');
+      setNoteSuccess('메모가 저장되었습니다.');
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
-        setNoteError('?? ??? ???????. ?? ??? ???.');
+        setNoteError('네트워크/서버 응답이 지연되고 있습니다. 다시 시도해 주세요.');
       } else {
-        setNoteError('?? ?? ? ??? ??????.');
+        setNoteError('메모 저장 중 오류가 발생했습니다.');
       }
       setNoteRetry(true);
     } finally {
@@ -367,15 +366,15 @@ export default function InquiriesAdminPage() {
       <section className="rounded-xl bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-lg font-semibold">?? ??</h2>
-            <p className="text-sm text-slate-500">? {filteredInquiries.length}?</p>
+            <h2 className="text-lg font-semibold">문의 내역</h2>
+            <p className="text-sm text-slate-500">총 {filteredInquiries.length}건</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <a
               href="/api/inquiries/export"
               className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
             >
-              ?? ????
+              엑셀 다운로드
             </a>
             <select
               value={contactedFilter}
@@ -384,15 +383,15 @@ export default function InquiriesAdminPage() {
               }
               className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700"
             >
-              <option value="all">??</option>
-              <option value="uncontacted">???</option>
-              <option value="contacted">?? ??</option>
+              <option value="all">전체</option>
+              <option value="uncontacted">미연락</option>
+              <option value="contacted">연락 완료</option>
             </select>
             <input
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="???/???? ??"
+              placeholder="고객명/전화번호 검색"
               className="w-48 rounded-md border border-slate-200 px-3 py-2 text-sm"
             />
             <button
@@ -400,7 +399,7 @@ export default function InquiriesAdminPage() {
               onClick={handleExitAdmin}
               className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600"
             >
-              ??? ?? ??
+              로그아웃
             </button>
           </div>
         </div>
@@ -415,7 +414,7 @@ export default function InquiriesAdminPage() {
             ))}
             {loadingSlow && (
               <p className="text-sm text-slate-500">
-                Loading may take longer due to network/server delay.
+                네트워크/서버 지연으로 로딩이 오래 걸릴 수 있습니다.
               </p>
             )}
           </div>
@@ -437,11 +436,8 @@ export default function InquiriesAdminPage() {
                       </p>
                     </div>
                     {inquiry.note_exists && (
-                      <span
-                        title={inquiry.note_preview || undefined}
-                        aria-label="???? ??"
-                      >
-                        ??
+                      <span title={inquiry.note_preview || undefined} aria-label="메모 있음">
+                        📝
                       </span>
                     )}
                   </div>
@@ -459,18 +455,18 @@ export default function InquiriesAdminPage() {
                           : 'bg-slate-100 text-slate-600'
                       }`}
                     >
-                      {inquiry.contacted ? '??' : '???'}
+                      {inquiry.contacted ? '완료' : '미연락'}
                     </button>
                   </div>
                   <div className="mt-3 flex items-center gap-2">
                     <a
                       href={`tel:${normalizePhoneNumber(inquiry.phone)}`}
-                      className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600"
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 whitespace-nowrap"
                       onClick={(event) => event.stopPropagation()}
                     >
-                      ??
+                      전화
                     </a>
-                    <span className="text-xs text-slate-500">?? ??</span>
+                    <span className="text-xs text-slate-500">연락 상태</span>
                   </div>
                 </button>
               ))}
@@ -479,11 +475,11 @@ export default function InquiriesAdminPage() {
               <table className="min-w-full border-collapse text-sm">
                 <thead className="border-b border-slate-200 text-left">
                   <tr>
-                    <th className="py-2 pr-4">???</th>
-                    <th className="py-2 pr-4">???</th>
-                    <th className="py-2 pr-4">????</th>
-                    <th className="py-2 pr-4">????</th>
-                    <th className="py-2 pr-4">????</th>
+                    <th className="py-2 pr-4">문의일</th>
+                    <th className="py-2 pr-4">성명</th>
+                    <th className="py-2 pr-4">전화번호</th>
+                    <th className="py-2 pr-4">메모</th>
+                    <th className="py-2 pr-4">연락유무</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -502,20 +498,17 @@ export default function InquiriesAdminPage() {
                           <span>{inquiry.phone}</span>
                           <a
                             href={`tel:${normalizePhoneNumber(inquiry.phone)}`}
-                            className="rounded-full border border-slate-200 px-2 py-0.5 text-xs text-slate-600 hover:border-slate-300"
+                            className="rounded-full border border-slate-200 px-2 py-0.5 text-xs text-slate-600 hover:border-slate-300 whitespace-nowrap"
                             onClick={(event) => event.stopPropagation()}
                           >
-                            ??
+                            전화
                           </a>
                         </div>
                       </td>
                       <td className="py-2 pr-4">
                         {inquiry.note_exists ? (
-                          <span
-                            title={inquiry.note_preview || undefined}
-                            aria-label="???? ??"
-                          >
-                            ??
+                          <span title={inquiry.note_preview || undefined} aria-label="메모 있음">
+                            📝
                           </span>
                         ) : (
                           <span className="text-xs text-slate-400">-</span>
@@ -534,7 +527,7 @@ export default function InquiriesAdminPage() {
                               : 'bg-slate-100 text-slate-600'
                           }`}
                         >
-                          {inquiry.contacted ? '??' : '???'}
+                          {inquiry.contacted ? '완료' : '미연락'}
                         </button>
                       </td>
                     </tr>
@@ -549,7 +542,7 @@ export default function InquiriesAdminPage() {
       {(detailLoading || selectedDetail || detailError) && (
         <section className="rounded-xl bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">?? ??</h3>
+            <h3 className="text-lg font-semibold">문의 상세</h3>
             <button
               className="text-sm text-slate-500"
               onClick={() => {
@@ -557,7 +550,7 @@ export default function InquiriesAdminPage() {
                 setDetailError(null);
               }}
             >
-              ??
+              닫기
             </button>
           </div>
           {detailLoading ? (
@@ -567,7 +560,7 @@ export default function InquiriesAdminPage() {
               <div className="h-24 rounded-md bg-slate-100 animate-pulse" />
               {detailLoadingSlow && (
                 <p className="text-sm text-slate-500">
-                  Loading may take longer due to network/server delay.
+                  네트워크/서버 지연으로 로딩이 오래 걸릴 수 있습니다.
                 </p>
               )}
             </div>
@@ -576,43 +569,43 @@ export default function InquiriesAdminPage() {
           ) : selectedDetail ? (
             <div className="mt-4 grid gap-4">
               <div>
-                <p className="text-xs text-slate-500">???</p>
+                <p className="text-xs text-slate-500">문의일</p>
                 <p className="text-sm">
                   {new Date(selectedDetail.created_at).toLocaleString('ko-KR')}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-slate-500">???</p>
+                <p className="text-xs text-slate-500">성명</p>
                 <p className="text-sm">{selectedDetail.customer_name}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500">????</p>
+                <p className="text-xs text-slate-500">전화번호</p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm">{selectedDetail.phone}</p>
                   <a
                     href={`tel:${normalizePhoneNumber(selectedDetail.phone)}`}
-                    className="rounded-full border border-slate-200 px-2 py-0.5 text-xs text-slate-600 hover:border-slate-300"
+                    className="rounded-full border border-slate-200 px-2 py-0.5 text-xs text-slate-600 hover:border-slate-300 whitespace-nowrap"
                   >
-                    ??
+                    전화
                   </a>
                 </div>
               </div>
               <div>
-                <p className="text-xs text-slate-500">????</p>
+                <p className="text-xs text-slate-500">문의내용</p>
                 <p className="text-sm whitespace-pre-wrap">{selectedDetail.content}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500">????(?? ??)</p>
+                <p className="text-xs text-slate-500">특이사항(통화 메모)</p>
                 <textarea
                   value={noteDraft}
                   onChange={(event) => setNoteDraft(event.target.value)}
                   rows={4}
                   className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                  placeholder="?? ? ????? ?????."
+                  placeholder="메모를 입력해 주세요."
                 />
                 {selectedDetail.note_updated_at && (
                   <p className="mt-1 text-[11px] text-slate-400">
-                    ??? ?? ??:{' '}
+                    마지막 메모 수정:{' '}
                     {new Date(selectedDetail.note_updated_at).toLocaleString('ko-KR')}
                   </p>
                 )}
@@ -623,7 +616,7 @@ export default function InquiriesAdminPage() {
                     disabled={noteSaving}
                     className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-slate-400"
                   >
-                    {noteSaving ? '?? ?...' : '?? ??'}
+                    {noteSaving ? '저장 중...' : '메모 저장'}
                   </button>
                   {noteSuccess && (
                     <div className="text-xs text-emerald-600">
@@ -643,46 +636,46 @@ export default function InquiriesAdminPage() {
                       onClick={saveNote}
                       className="rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600"
                     >
-                      ???
+                      재시도
                     </button>
                   )}
                 </div>
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-slate-500">???? ??? ?????.</p>
+            <p className="mt-4 text-sm text-slate-500">문의 항목을 선택해 주세요.</p>
           )}
         </section>
       )}
 
       {debugMode && listPerf && (
         <section className="rounded-xl bg-white p-6 text-sm shadow-sm">
-          <h4 className="text-base font-semibold">Performance Panel</h4>
+          <h4 className="text-base font-semibold">성능 패널</h4>
           <div className="mt-3 grid gap-2">
-            <p>requestId: {listPerf.requestId ?? '-'}</p>
-            <p>fetch(ms): {listPerf.fetchMs}</p>
-            <p>json(ms): {listPerf.jsonMs}</p>
+            <p>요청 ID: {listPerf.requestId ?? '-'}</p>
+            <p>요청(ms): {listPerf.fetchMs}</p>
+            <p>JSON 파싱(ms): {listPerf.jsonMs}</p>
             <p>
-              server timings: total {listPerf.serverTimings.total ?? '-'} / db{' '}
+              서버 타이밍: total {listPerf.serverTimings.total ?? '-'} / db{' '}
               {listPerf.serverTimings.db ?? '-'} / auth {listPerf.serverTimings.auth ?? '-'} /
               serialize {listPerf.serverTimings.serialize ?? '-'}
             </p>
-            <p>payload bytes: {listPerf.payloadBytes ?? '-'}</p>
-            <p>row count: {listPerf.rowCount ?? '-'}</p>
+            <p>payload 바이트: {listPerf.payloadBytes ?? '-'}</p>
+            <p>행 수: {listPerf.rowCount ?? '-'}</p>
             <p>{listBottleneck}</p>
           </div>
           {detailPerf && (
             <div className="mt-4 border-t border-slate-100 pt-4">
-              <p className="font-semibold">Detail request</p>
-              <p>requestId: {detailPerf.requestId ?? '-'}</p>
-              <p>fetch(ms): {detailPerf.fetchMs}</p>
-              <p>json(ms): {detailPerf.jsonMs}</p>
+              <p className="font-semibold">상세 요청</p>
+              <p>요청 ID: {detailPerf.requestId ?? '-'}</p>
+              <p>요청(ms): {detailPerf.fetchMs}</p>
+              <p>JSON 파싱(ms): {detailPerf.jsonMs}</p>
               <p>
-                server timings: total {detailPerf.serverTimings.total ?? '-'} / db{' '}
+                서버 타이밍: total {detailPerf.serverTimings.total ?? '-'} / db{' '}
                 {detailPerf.serverTimings.db ?? '-'} / auth {detailPerf.serverTimings.auth ?? '-'} /
                 serialize {detailPerf.serverTimings.serialize ?? '-'}
               </p>
-              <p>payload bytes: {detailPerf.payloadBytes ?? '-'}</p>
+              <p>payload 바이트: {detailPerf.payloadBytes ?? '-'}</p>
             </div>
           )}
         </section>

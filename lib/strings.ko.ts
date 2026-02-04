@@ -1,0 +1,113 @@
+export const strings = {
+  appName: 'MOTO-CRM',
+  nav: {
+    home: '홈',
+    admin: '관리자',
+    dashboard: '대시보드',
+    users: '사용자 관리',
+    reception: '접수',
+    receptionRegister: '접수 등록',
+    receptionHistory: '접수 내역',
+    inquiries: '문의',
+    inquiryRegister: '문의 등록',
+    inquiryHistory: '문의 내역',
+    as: 'A/S',
+    asRegister: 'A/S 접수',
+    asHistory: 'A/S 내역'
+  },
+  login: {
+    title: '센터 로그인',
+    subtitle: '센터 관리자 계정으로 로그인하세요.',
+    identifier: '이메일 또는 사용자명',
+    password: '비밀번호',
+    submit: '로그인',
+    submitting: '로그인 중...'
+  },
+  todos: {
+    today: '오늘 할 일',
+    tomorrow: '내일 할 일',
+    loading: '불러오는 중...',
+    addPlaceholder: '할 일을 입력하세요',
+    add: '추가',
+    remove: '삭제',
+    saveToday: '오늘 저장',
+    saveTomorrow: '내일 저장',
+    saving: '저장 중...',
+    fetchFailed: '할 일 불러오기에 실패했습니다.',
+    saveFailed: '저장에 실패했습니다.',
+    retry: '다시 시도'
+  },
+  common: {
+    loading: '불러오는 중...',
+    save: '저장',
+    cancel: '취소',
+    close: '닫기',
+    logout: '로그아웃',
+    search: '검색',
+    downloadExcel: '엑셀 다운로드',
+    required: '필수',
+    retry: '다시 시도',
+    errorDetails: '오류 상세 보기'
+  },
+  receipts: {
+    title: '접수 등록',
+    description: '접수 내용을 입력하면 관리자에게 즉시 전달됩니다.',
+    historyTitle: '접수 내역',
+    detailTitle: '접수 상세',
+    vehicleInfo: '차량 정보',
+    customerInfo: '고객 정보',
+    photoUpload: '사진 업로드',
+    serviceInfo: '정비 내용',
+    brandModelRequired: '브랜드/모델을 선택해 주세요.',
+    submit: '접수 등록',
+    submitLoading: '저장 중...',
+    submitSuccess: '접수 등록이 완료되었습니다.',
+    submitFailed: '접수 등록에 실패했습니다.',
+    autoFill: '기존 차량 정보가 자동으로 채워졌습니다.',
+    vinPhoto: 'VIN 사진',
+    enginePhoto: '엔진번호 사진',
+    noPhoto: '등록된 사진 없음',
+    viewPhoto: '사진 크게 보기',
+    deleteTitle: '접수 삭제',
+    deleteConfirm: '삭제 후 복구할 수 없습니다. 정말 삭제하시겠습니까?',
+    delete: '삭제',
+    deleteFailed: '삭제 실패',
+    deleteRetry: '재시도',
+    deleteInProgress: '삭제중...'
+  },
+  inquiry: {
+    title: '문의 등록',
+    historyTitle: '문의 내역',
+    detailTitle: '문의 상세',
+    contacted: '연락 완료',
+    uncontacted: '미연락',
+    note: '특이사항(통화 메모)',
+    notePlaceholder: '통화 후 남길 메모를 입력하세요.',
+    noteSave: '메모 저장',
+    noteSaving: '저장 중...',
+    noteSaved: '메모가 저장되었습니다.',
+    searchPlaceholder: '고객명/전화번호 검색'
+  },
+  as: {
+    title: 'A/S 접수',
+    description: 'A/S 접수 내용을 입력하면 관리자에게 즉시 전달됩니다.',
+    historyTitle: 'A/S 내역',
+    detailTitle: 'A/S 상세',
+    submit: 'A/S 접수 등록',
+    submitSuccess: 'A/S 접수가 완료되었습니다.',
+    submitFailed: 'A/S 접수에 실패했습니다.'
+  },
+  adminUsers: {
+    title: '사용자 관리',
+    description: '이 센터의 관리자 계정을 생성/관리합니다.',
+    create: '사용자 생성',
+    creating: '생성 중...',
+    email: '이메일(선택)',
+    username: '사용자명(선택)',
+    password: '비밀번호',
+    center: '센터',
+    listTitle: '사용자 목록'
+  }
+} as const;
+
+export type Strings = typeof strings;

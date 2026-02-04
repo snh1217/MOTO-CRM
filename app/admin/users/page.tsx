@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
+import { strings } from '@/lib/strings.ko';
 
 type Center = {
   id: string;
@@ -40,8 +41,8 @@ export default function AdminUsersPage() {
 
     try {
       const [usersRes, centersRes] = await Promise.all([
-        fetch('/api/admin/users'),
-        fetch('/api/admin/centers')
+        fetch('/api/admin/users', { credentials: 'include' }),
+        fetch('/api/admin/centers', { credentials: 'include' })
       ]);
 
       if (usersRes.status === 401 || centersRes.status === 401) {
@@ -53,13 +54,13 @@ export default function AdminUsersPage() {
       const centersResult = await centersRes.json().catch(() => ({}));
 
       if (!usersRes.ok) {
-        setError(usersResult.error || usersResult.message || 'Failed to load users.');
+        setError(usersResult.error || usersResult.message || '사용자 조회에 실패했습니다.');
         setRequestId(usersResult.requestId || null);
         return;
       }
 
       if (!centersRes.ok) {
-        setError(centersResult.error || centersResult.message || 'Failed to load centers.');
+        setError(centersResult.error || centersResult.message || '센터 조회에 실패했습니다.');
         setRequestId(centersResult.requestId || null);
         return;
       }
@@ -67,7 +68,7 @@ export default function AdminUsersPage() {
       setUsers(usersResult.data || []);
       setCenters(centersResult.data || []);
     } catch (err) {
-      setError('Failed to load data.');
+      setError('데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -93,14 +94,15 @@ export default function AdminUsersPage() {
             email: formEmail,
             username: formUsername,
             password: formPassword
-          })
+          }),
+          credentials: 'include'
         },
         12000
       );
 
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError(result.error || result.message || 'Create failed.');
+        setError(result.error || result.message || '생성에 실패했습니다.');
         setRequestId(result.requestId || null);
         return;
       }
@@ -110,7 +112,7 @@ export default function AdminUsersPage() {
       setFormUsername('');
       setFormPassword('');
     } catch (err) {
-      setError('Create failed.');
+      setError('생성에 실패했습니다.');
     } finally {
       setSaving(false);
     }
@@ -121,41 +123,41 @@ export default function AdminUsersPage() {
       <Nav />
       <section className="rounded-xl bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-semibold">Admin Users</h2>
-          <p className="text-sm text-slate-500">Create and manage accounts for this center.</p>
+          <h2 className="text-lg font-semibold">{strings.adminUsers.title}</h2>
+          <p className="text-sm text-slate-500">{strings.adminUsers.description}</p>
         </div>
 
         <form onSubmit={handleCreate} className="mt-6 grid gap-3 md:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm">
-            Email (optional)
+            {strings.adminUsers.email}
             <input
-              className="rounded-md border border-slate-200 px-3 py-2"
+              className="h-11 rounded-md border border-slate-200 px-3"
               value={formEmail}
               onChange={(event) => setFormEmail(event.target.value)}
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            Username (optional)
+            {strings.adminUsers.username}
             <input
-              className="rounded-md border border-slate-200 px-3 py-2"
+              className="h-11 rounded-md border border-slate-200 px-3"
               value={formUsername}
               onChange={(event) => setFormUsername(event.target.value)}
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            Password
+            {strings.adminUsers.password}
             <input
               type="password"
-              className="rounded-md border border-slate-200 px-3 py-2"
+              className="h-11 rounded-md border border-slate-200 px-3"
               value={formPassword}
               onChange={(event) => setFormPassword(event.target.value)}
               required
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            Center
-            <select className="rounded-md border border-slate-200 px-3 py-2" disabled>
-              {centers.length === 0 && <option>Loading...</option>}
+            {strings.adminUsers.center}
+            <select className="h-11 rounded-md border border-slate-200 px-3" disabled>
+              {centers.length === 0 && <option>불러오는 중...</option>}
               {centers.map((center) => (
                 <option key={center.id} value={center.id}>
                   {center.name} ({center.code})
@@ -167,9 +169,9 @@ export default function AdminUsersPage() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-60"
+              className="h-11 rounded-md bg-slate-900 px-4 text-sm text-white disabled:opacity-60"
             >
-              {saving ? 'Creating...' : 'Create User'}
+              {saving ? strings.adminUsers.creating : strings.adminUsers.create}
             </button>
             {error && (
               <p className="text-xs text-red-500">
@@ -182,16 +184,16 @@ export default function AdminUsersPage() {
       </section>
 
       <section className="rounded-xl bg-white p-6 shadow-sm">
-        <h3 className="text-base font-semibold">Users</h3>
+        <h3 className="text-base font-semibold">{strings.adminUsers.listTitle}</h3>
         {loading ? (
-          <p className="mt-4 text-sm text-slate-500">Loading...</p>
+          <p className="mt-4 text-sm text-slate-500">{strings.common.loading}</p>
         ) : (
           <>
             <div className="mt-4 space-y-3 md:hidden">
               {users.map((user) => (
                 <div key={user.id} className="rounded-lg border border-slate-200 p-4 text-sm">
-                  <p className="font-semibold">{user.email || user.username || 'Unnamed'}</p>
-                  <p className="text-xs text-slate-500">{user.centers?.name || 'Center'}</p>
+                  <p className="font-semibold">{user.email || user.username || '이름 없음'}</p>
+                  <p className="text-xs text-slate-500">{user.centers?.name || '센터'}</p>
                   <p className="mt-1 text-xs text-slate-400">
                     {new Date(user.created_at).toLocaleString('ko-KR')}
                   </p>
@@ -202,10 +204,10 @@ export default function AdminUsersPage() {
               <table className="min-w-full border-collapse text-sm">
                 <thead className="border-b border-slate-200 text-left">
                   <tr>
-                    <th className="py-2 pr-4">Email</th>
-                    <th className="py-2 pr-4">Username</th>
-                    <th className="py-2 pr-4">Center</th>
-                    <th className="py-2 pr-4">Created</th>
+                    <th className="py-2 pr-4">이메일</th>
+                    <th className="py-2 pr-4">사용자명</th>
+                    <th className="py-2 pr-4">센터</th>
+                    <th className="py-2 pr-4">생성일</th>
                   </tr>
                 </thead>
                 <tbody>

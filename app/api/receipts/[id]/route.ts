@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   console.log(`[receipts][GET:ID] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('?�증 ?�요', requestId, { status: 401 });
+    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
   }
 
   const supabaseServer = getSupabaseServer();
@@ -31,12 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   if (error) {
     console.error(`[receipts][GET:ID] requestId=${requestId} error`, error);
-    return jsonErrorResponse(
-      '조회 ?�패',
-      requestId,
-      { status: 500 },
-      serializeSupabaseError(error)
-    );
+    return jsonErrorResponse('조회 실패', requestId, { status: 500 }, serializeSupabaseError(error));
   }
 
   return jsonResponse({ data }, { status: 200 }, requestId);
@@ -47,7 +42,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   console.log(`[receipts][PATCH] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('?�증 ?�요', requestId, { status: 401 });
+    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
   }
 
   try {
@@ -62,7 +57,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (existingError || !existing) {
       console.error(`[receipts][PATCH] requestId=${requestId} fetch error`, existingError);
       return jsonErrorResponse(
-        '기존 ?�수 ?�보�?불러?��? 못했?�니??',
+        '기존 접수 정보를 불러오지 못했습니다.',
         requestId,
         { status: 500 },
         serializeSupabaseError(existingError)
@@ -91,20 +86,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     });
 
     if (missing.length > 0) {
-      return jsonErrorResponse(
-        `?�수 �??�락: ${missing.join(', ')}`,
-        requestId,
-        { status: 400 }
-      );
+      return jsonErrorResponse(`필수 값 누락: ${missing.join(', ')}`, requestId, { status: 400 });
     }
 
     if (phone && !phoneRegex.test(phone)) {
-      return jsonErrorResponse('?�화번호 ?�식???�바르�? ?�습?�다.', requestId, { status: 400 });
+      return jsonErrorResponse('전화번호 형식이 올바르지 않습니다.', requestId, { status: 400 });
     }
 
     const mileageKm = Number(mileageRaw);
     if (Number.isNaN(mileageKm) || mileageKm < 0) {
-      return jsonErrorResponse('주행거리 값을 ?�인?�주?�요.', requestId, { status: 400 });
+      return jsonErrorResponse('주행거리 값을 확인해 주세요.', requestId, { status: 400 });
     }
 
     let vinUrl = existing.vin_image_url as string | null;
@@ -135,7 +126,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       if (vinUpload.error) {
         console.error(`[receipts][PATCH] requestId=${requestId} vin upload error`, vinUpload.error);
         return jsonErrorResponse(
-          '차�?번호 ?�로???�패',
+          'VIN 업로드 실패',
           requestId,
           { status: 500 },
           serializeSupabaseError(vinUpload.error),
@@ -161,7 +152,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           engineUpload.error
         );
         return jsonErrorResponse(
-          '?�진번호 ?�로???�패',
+          '엔진 업로드 실패',
           requestId,
           { status: 500 },
           serializeSupabaseError(engineUpload.error),
@@ -194,7 +185,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (error) {
       console.error(`[receipts][PATCH] requestId=${requestId} db update error`, error);
       return jsonErrorResponse(
-        '?�정 ?�???�패',
+        '수정 저장 실패',
         requestId,
         { status: 500 },
         serializeSupabaseError(error),
@@ -222,7 +213,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (profileError) {
       console.error(`[receipts][PATCH] requestId=${requestId} profile upsert error`, profileError);
       return jsonErrorResponse(
-        '?�로??최신???�패',
+        '프로필 최신화 실패',
         requestId,
         { status: 500 },
         serializeSupabaseError(profileError),
@@ -232,7 +223,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     return jsonResponse(
       {
-        message: '?�정???�료?�었?�니??',
+        message: '수정이 완료되었습니다.',
         data: updated
       },
       { status: 200 },
@@ -240,7 +231,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     );
   } catch (error) {
     console.error(`[receipts][PATCH] requestId=${requestId} unexpected error`, error);
-    return jsonErrorResponse('?�버 ?�류가 발생?�습?�다.', requestId, { status: 500 });
+    return jsonErrorResponse('서버 오류가 발생했습니다.', requestId, { status: 500 });
   }
 }
 
@@ -249,7 +240,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   console.log(`[receipts][DELETE] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('?�증 ?�요', requestId, { status: 401 });
+    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
   }
 
   const supabaseServer = getSupabaseServer();
@@ -262,7 +253,12 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
   if (fetchError || !existing) {
     console.error(`[receipts][DELETE] requestId=${requestId} fetch error`, fetchError);
-    return jsonErrorResponse('���� ����� �����ϴ�.', requestId, { status: 404 }, serializeSupabaseError(fetchError));
+    return jsonErrorResponse(
+      '삭제할 접수를 찾을 수 없습니다.',
+      requestId,
+      { status: 404 },
+      serializeSupabaseError(fetchError)
+    );
   }
 
   const paths: string[] = [];
@@ -275,7 +271,12 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const { error: storageError } = await supabaseServer.storage.from(BUCKET).remove(paths);
     if (storageError) {
       console.error(`[receipts][DELETE] requestId=${requestId} storage error`, storageError);
-      return jsonErrorResponse('�̹��� ���� ����', requestId, { status: 500 }, serializeSupabaseError(storageError));
+      return jsonErrorResponse(
+        '스토리지 파일 삭제 실패',
+        requestId,
+        { status: 500 },
+        serializeSupabaseError(storageError)
+      );
     }
   }
 
@@ -287,8 +288,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
   if (deleteError) {
     console.error(`[receipts][DELETE] requestId=${requestId} delete error`, deleteError);
-    return jsonErrorResponse('���� ����', requestId, { status: 500 }, serializeSupabaseError(deleteError));
+    return jsonErrorResponse('삭제 실패', requestId, { status: 500 }, serializeSupabaseError(deleteError));
   }
 
-  return jsonResponse({ message: '���� �Ϸ�', id: params.id }, { status: 200 }, requestId);
+  return jsonResponse({ message: '삭제 완료', id: params.id }, { status: 200 }, requestId);
 }

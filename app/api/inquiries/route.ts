@@ -22,21 +22,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (missing.length > 0) {
-      return jsonErrorResponse(
-        `?�수 �??�락: ${missing.join(', ')}`,
-        requestId,
-        { status: 400 }
-      );
+      return jsonErrorResponse(`필수 값 누락: ${missing.join(', ')}`, requestId, { status: 400 });
     }
 
     if (!phoneRegex.test(phone)) {
-      return jsonErrorResponse('?�화번호 ?�식???�바르�? ?�습?�다.', requestId, { status: 400 });
+      return jsonErrorResponse('전화번호 형식이 올바르지 않습니다.', requestId, { status: 400 });
     }
 
     const supabaseServer = getSupabaseServer();
     const centerId = await resolveCenterId(request);
     if (!centerId) {
-      return jsonErrorResponse('���� ������ Ȯ���� �� �����ϴ�.', requestId, { status: 400 });
+      return jsonErrorResponse('센터 정보를 확인할 수 없습니다.', requestId, { status: 400 });
     }
 
     const { data, error } = await supabaseServer
@@ -53,18 +49,13 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error(`[inquiries][POST] requestId=${requestId} error`, error);
-      return jsonErrorResponse(
-        '?�???�패',
-        requestId,
-        { status: 500 },
-        serializeSupabaseError(error)
-      );
+      return jsonErrorResponse('저장 실패', requestId, { status: 500 }, serializeSupabaseError(error));
     }
 
-    return jsonResponse({ message: '문의가 ?�록?�었?�니??', data }, { status: 200 }, requestId);
+    return jsonResponse({ message: '문의가 등록되었습니다.', data }, { status: 200 }, requestId);
   } catch (error) {
     console.error(`[inquiries][POST] requestId=${requestId} error`, error);
-    return jsonErrorResponse('?�버 ?�류가 발생?�습?�다.', requestId, { status: 500 });
+    return jsonErrorResponse('서버 오류가 발생했습니다.', requestId, { status: 500 });
   }
 }
 
@@ -75,7 +66,7 @@ export async function GET(request: NextRequest) {
   const isAdmin = await requireAdmin(request);
   const authMs = performance.now() - authStart;
   if (!isAdmin) {
-    return jsonErrorResponse('?�증 ?�요', requestId, { status: 401 });
+    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
   }
 
   const dbStart = performance.now();
@@ -89,12 +80,7 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error(`[inquiries][GET] requestId=${requestId} error`, error);
-    return jsonErrorResponse(
-      '조회 ?�패',
-      requestId,
-      { status: 500 },
-      serializeSupabaseError(error)
-    );
+    return jsonErrorResponse('조회 실패', requestId, { status: 500 }, serializeSupabaseError(error));
   }
 
   const serializeStart = performance.now();
@@ -126,9 +112,7 @@ export async function GET(request: NextRequest) {
     `[inquiries][GET] requestId=${requestId} total=${timings.t_total_ms} auth=${timings.t_auth_ms} db=${timings.t_db_ms} serialize=${timings.t_serialize_ms} count=${list.length} bytes=${payloadBytes}`
   );
 
-  const responseBody = debug
-    ? { requestId, data: list, timings }
-    : { requestId, data: list };
+  const responseBody = debug ? { requestId, data: list, timings } : { requestId, data: list };
   const response = NextResponse.json(responseBody, { status: 200 });
   response.headers.set('x-request-id', requestId);
   response.headers.set(

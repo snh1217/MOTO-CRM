@@ -14,6 +14,7 @@ import {
 import { normalizeVehicleNumber } from '@/lib/normalizeVehicleNumber';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 import DebugPanel, { type DebugLogEntry } from '@/components/DebugPanel';
+import { strings } from '@/lib/strings.ko';
 
 const initialState = {
   vehicleNumber: '',
@@ -124,13 +125,13 @@ export default function ReceiptForm() {
 
     let index = 0;
     setSubmitStage(stages[index]);
-    addLog('submit', `ë‹¨ê³„ ì‹œì‘: ${stages[index]}`);
+    addLog('submit', `´Ü°è ½ÃÀÛ: ${stages[index]}`);
 
     stageTimerRef.current = setInterval(() => {
       if (index < stages.length - 1) {
         index += 1;
         setSubmitStage(stages[index]);
-        addLog('submit', `ë‹¨ê³„ ì´ë™: ${stages[index]}`);
+        addLog('submit', `´Ü°è ÀÌµ¿: ${stages[index]}`);
       }
     }, 1200);
   };
@@ -146,8 +147,8 @@ export default function ReceiptForm() {
     if (!vehicleName) {
       setLoading(false);
       setSubmitStage('error');
-      setMessage('ë¸Œëœë“œ/ëª¨ë¸ì„ ì„ íƒí•´ì£¼ì„¸ìš”.');
-      addLog('validation', 'ë¸Œëœë“œ+ëª¨ë¸ ëˆ„ë½');
+      setMessage(strings.receipts.brandModelRequired);
+      addLog('validation', 'ºê·£µå/¸ğµ¨ ´©¶ô');
       clearStageTimer();
       return;
     }
@@ -172,7 +173,7 @@ export default function ReceiptForm() {
         payload.append('engine_image', engineImage);
       }
 
-      addLog('submit', 'ì ‘ìˆ˜ ì €ì¥ ìš”ì²­ ì‹œì‘');
+      addLog('submit', 'Á¢¼ö ÀúÀå ¿äÃ» ½ÃÀÛ');
       const response = await fetchWithTimeout('/api/receipts', {
         method: 'POST',
         body: payload
@@ -183,14 +184,14 @@ export default function ReceiptForm() {
 
       if (!response.ok) {
         setSubmitStage('error');
-        setMessage(result.error || result.message || 'ì ‘ìˆ˜ ë“±ë¡ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.');
+        setMessage(result.error || result.message || strings.receipts.submitFailed);
         setErrorDetails({
           requestId: result.requestId,
           status: response.status,
           body: result
         });
         setShowRetry(true);
-        addLog('error', `ìš”ì²­ ì‹¤íŒ¨: ${result.error || result.message}`);
+        addLog('error', `¿äÃ» ½ÇÆĞ: ${result.error || result.message}`);
         return;
       }
 
@@ -202,17 +203,17 @@ export default function ReceiptForm() {
       setHasManualSelection(false);
       setVinImage(null);
       setEngineImage(null);
-      setMessage(result.message || 'ì ‘ìˆ˜ ë“±ë¡ì´ ì™„ë£Œë˜ì—ˆìŠµë‹ˆë‹¤.');
-      addLog('success', 'ì ‘ìˆ˜ ë“±ë¡ ì™„ë£Œ');
+      setMessage(result.message || strings.receipts.submitSuccess);
+      addLog('success', 'Á¢¼ö µî·Ï ¿Ï·á');
     } catch (error) {
       setSubmitStage('error');
       setShowRetry(true);
       if (error instanceof DOMException && error.name === 'AbortError') {
-        setMessage('ë„¤íŠ¸ì›Œí¬/ì„œë²„ ì‘ë‹µì´ ì§€ì—°ë˜ê³  ìˆìŠµë‹ˆë‹¤. ë‹¤ì‹œ ì‹œë„í•´ì£¼ì„¸ìš”.');
-        addLog('timeout', 'ìš”ì²­ íƒ€ì„ì•„ì›ƒ');
+        setMessage('³×Æ®¿öÅ©/¼­¹ö ÀÀ´äÀÌ Áö¿¬µÇ°í ÀÖ½À´Ï´Ù. ´Ù½Ã ½ÃµµÇØ ÁÖ¼¼¿ä.');
+        addLog('timeout', '¿äÃ» ½Ã°£ ÃÊ°ú');
       } else {
-        setMessage('ìš”ì²­ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.');
-        addLog('error', 'ìš”ì²­ ì²˜ë¦¬ ì¤‘ ì˜ˆì™¸ ë°œìƒ');
+        setMessage('¿äÃ» Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.');
+        addLog('error', '¿äÃ» Ã³¸® Áß ¿¹¿Ü ¹ß»ı');
       }
       setErrorDetails({ error });
     } finally {
@@ -254,7 +255,7 @@ export default function ReceiptForm() {
       const controller = new AbortController();
       lookupAbortRef.current = controller;
       try {
-        addLog('lookup', 'ì°¨ëŸ‰ë²ˆí˜¸ ìë™ ì¡°íšŒ ìš”ì²­');
+        addLog('lookup', 'Â÷·®¹øÈ£ ÀÚµ¿ Á¶È¸ ¿äÃ»');
         const response = await fetchWithTimeout(
           `/api/receipts/lookup?vehicle_number=${encodeURIComponent(form.vehicleNumber)}`,
           { signal: controller.signal },
@@ -269,7 +270,7 @@ export default function ReceiptForm() {
         if (!response.ok || !result.found) {
           setAutoFillMessage(null);
           if (!response.ok) {
-            addLog('lookup', `ì¡°íšŒ ì‹¤íŒ¨: ${result.error || result.message || 'unknown'}`);
+            addLog('lookup', `Á¶È¸ ½ÇÆĞ: ${result.error || result.message || 'unknown'}`);
           }
           return;
         }
@@ -300,14 +301,14 @@ export default function ReceiptForm() {
           }
         }
 
-        setAutoFillMessage('ê¸°ì¡´ ì°¨ëŸ‰ ì •ë³´ê°€ ìë™ìœ¼ë¡œ ì±„ì›Œì¡ŒìŠµë‹ˆë‹¤.');
-        addLog('lookup', 'ìë™ ì¡°íšŒ ì™„ë£Œ');
+        setAutoFillMessage(strings.receipts.autoFill);
+        addLog('lookup', 'ÀÚµ¿ Á¶È¸ ¿Ï·á');
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
         setAutoFillMessage(null);
-        addLog('lookup', 'ìë™ ì¡°íšŒ ìš”ì²­ ì‹¤íŒ¨');
+        addLog('lookup', 'ÀÚµ¿ Á¶È¸ ¿äÃ» ½ÇÆĞ');
       } finally {
         if (lookupAbortRef.current === controller) {
           lookupAbortRef.current = null;
@@ -329,15 +330,15 @@ export default function ReceiptForm() {
   const stageLabel = useMemo(() => {
     switch (submitStage) {
       case 'vin':
-        return 'VIN ì´ë¯¸ì§€ ì—…ë¡œë“œ ì¤‘...';
+        return 'VIN ÀÌ¹ÌÁö ¾÷·Îµå Áß...';
       case 'engine':
-        return 'ì—”ì§„ ì´ë¯¸ì§€ ì—…ë¡œë“œ ì¤‘...';
+        return '¿£Áø ÀÌ¹ÌÁö ¾÷·Îµå Áß...';
       case 'db':
-        return 'DB ì €ì¥ ì¤‘...';
+        return 'DB ÀúÀå Áß...';
       case 'done':
-        return 'ì €ì¥ ì™„ë£Œ';
+        return 'ÀúÀå ¿Ï·á';
       case 'error':
-        return 'ì˜¤ë¥˜ ë°œìƒ';
+        return '¿À·ù ¹ß»ı';
       default:
         return null;
     }
@@ -356,7 +357,7 @@ export default function ReceiptForm() {
         className="space-y-5"
       >
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">ì°¨ëŸ‰ ì •ë³´</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{strings.receipts.vehicleInfo}</p>
           <div className="flex flex-wrap gap-2">
             {BRANDS.map((brandOption) => (
               <button
@@ -401,7 +402,7 @@ export default function ReceiptForm() {
             </div>
           )}
           <label className="flex flex-col gap-1 text-sm">
-            ëª¨ë¸ ì„ íƒ (í•„ìˆ˜)
+            ¸ğµ¨ ¼±ÅÃ ({strings.common.required})
             <select
               className={inputClassName}
               value={model}
@@ -413,7 +414,7 @@ export default function ReceiptForm() {
               disabled={brand === 'ZT' && !ztType}
             >
               <option value="">
-                {brand === 'ZT' && !ztType ? 'ì¢…ë¥˜ë¥¼ ë¨¼ì € ì„ íƒí•˜ì„¸ìš”' : 'ëª¨ë¸ì„ ì„ íƒí•˜ì„¸ìš”'}
+                {brand === 'ZT' && !ztType ? 'Á¾·ù¸¦ ¸ÕÀú ¼±ÅÃÇÏ¼¼¿ä' : '¸ğµ¨À» ¼±ÅÃÇÏ¼¼¿ä'}
               </option>
               {models.map((item) => (
                 <option key={item} value={item}>
@@ -424,7 +425,7 @@ export default function ReceiptForm() {
           </label>
           <div className="grid gap-3 md:grid-cols-2">
             <label className="flex flex-col gap-1 text-sm">
-              ì°¨ëŸ‰ë²ˆí˜¸ (í•„ìˆ˜)
+              Â÷·®¹øÈ£ ({strings.common.required})
               <input
                 className={inputClassName}
                 value={form.vehicleNumber}
@@ -433,7 +434,7 @@ export default function ReceiptForm() {
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
-              ì£¼í–‰ê±°ë¦¬ (km) (í•„ìˆ˜)
+              ÁÖÇà°Å¸® (km) ({strings.common.required})
               <input
                 type="number"
                 className={inputClassName}
@@ -446,10 +447,10 @@ export default function ReceiptForm() {
         </div>
 
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">ê³ ê° ì •ë³´</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{strings.receipts.customerInfo}</p>
           <div className="grid gap-3 md:grid-cols-2">
             <label className="flex flex-col gap-1 text-sm">
-              ì„±ëª…
+              ¼º¸í
               <input
                 className={inputClassName}
                 value={form.customerName}
@@ -457,7 +458,7 @@ export default function ReceiptForm() {
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
-              ì „í™”ë²ˆí˜¸
+              ÀüÈ­¹øÈ£
               <input
                 className={inputClassName}
                 value={form.phone}
@@ -466,7 +467,7 @@ export default function ReceiptForm() {
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
-              êµ¬ì…ì¼ì
+              ±¸ÀÔÀÏÀÚ
               <input
                 type="date"
                 className={inputClassName}
@@ -475,7 +476,7 @@ export default function ReceiptForm() {
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
-              ì„ íƒëœ ì°¨ì¢…
+              ¼±ÅÃµÈ Â÷Á¾
               <input
                 className={`${inputClassName} bg-slate-50 text-slate-500`}
                 value={vehicleName}
@@ -486,15 +487,15 @@ export default function ReceiptForm() {
         </div>
 
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">ì‚¬ì§„ ì—…ë¡œë“œ</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{strings.receipts.photoUpload}</p>
           <div className="grid gap-3 md:grid-cols-2">
             <div
               className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4"
               onDrop={handleDrop(setVinImage)}
               onDragOver={handleDragOver}
             >
-              <p className="text-sm font-medium">VIN ì‚¬ì§„</p>
-              <p className="text-xs text-slate-500">ë“œë˜ê·¸í•˜ê±°ë‚˜ í´ë¦­í•˜ì—¬ ì—…ë¡œë“œ</p>
+              <p className="text-sm font-medium">{strings.receipts.vinPhoto}</p>
+              <p className="text-xs text-slate-500">µå·¡±×ÇÏ°Å³ª Å¬¸¯ÇÏ¿© ¾÷·Îµå</p>
               <input
                 type="file"
                 accept="image/*"
@@ -511,18 +512,18 @@ export default function ReceiptForm() {
                   onClick={() => setVinImage(null)}
                   className="self-start text-xs text-slate-500 underline"
                 >
-                  ì¬ì´¬ì˜/ì¬ì„ íƒ
+                  ÀçÃÔ¿µ/Àç¼±ÅÃ
                 </button>
               )}
-              <p className="text-xs text-slate-500">{vinImage ? vinImage.name : 'ì„ íƒëœ íŒŒì¼ ì—†ìŒ'}</p>
+              <p className="text-xs text-slate-500">{vinImage ? vinImage.name : '¼±ÅÃµÈ ÆÄÀÏ ¾øÀ½'}</p>
             </div>
             <div
               className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4"
               onDrop={handleDrop(setEngineImage)}
               onDragOver={handleDragOver}
             >
-              <p className="text-sm font-medium">ì—”ì§„ë²ˆí˜¸ ì‚¬ì§„</p>
-              <p className="text-xs text-slate-500">ë“œë˜ê·¸í•˜ê±°ë‚˜ í´ë¦­í•˜ì—¬ ì—…ë¡œë“œ</p>
+              <p className="text-sm font-medium">{strings.receipts.enginePhoto}</p>
+              <p className="text-xs text-slate-500">µå·¡±×ÇÏ°Å³ª Å¬¸¯ÇÏ¿© ¾÷·Îµå</p>
               <input
                 type="file"
                 accept="image/*"
@@ -543,20 +544,20 @@ export default function ReceiptForm() {
                   onClick={() => setEngineImage(null)}
                   className="self-start text-xs text-slate-500 underline"
                 >
-                  ì¬ì´¬ì˜/ì¬ì„ íƒ
+                  ÀçÃÔ¿µ/Àç¼±ÅÃ
                 </button>
               )}
               <p className="text-xs text-slate-500">
-                {engineImage ? engineImage.name : 'ì„ íƒëœ íŒŒì¼ ì—†ìŒ'}
+                {engineImage ? engineImage.name : '¼±ÅÃµÈ ÆÄÀÏ ¾øÀ½'}
               </p>
             </div>
           </div>
         </div>
 
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">ì •ë¹„ ë‚´ìš©</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{strings.receipts.serviceInfo}</p>
           <label className="flex flex-col gap-1 text-sm">
-            ì¦ìƒ
+            Áõ»ó
             <textarea
               className="min-h-[96px] rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
               value={form.symptom}
@@ -565,7 +566,7 @@ export default function ReceiptForm() {
           </label>
 
           <label className="flex flex-col gap-1 text-sm">
-            ì •ë¹„ë‚´ìš©
+            Á¤ºñ³»¿ë
             <textarea
               className="min-h-[96px] rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
               value={form.serviceDetail}
@@ -575,7 +576,7 @@ export default function ReceiptForm() {
         </div>
 
         {autoFillMessage && <p className="text-xs text-emerald-600">{autoFillMessage}</p>}
-        {stageLabel && <p className="text-xs text-slate-500">ì§„í–‰ ë‹¨ê³„: {stageLabel}</p>}
+        {stageLabel && <p className="text-xs text-slate-500">ÁøÇà ´Ü°è: {stageLabel}</p>}
         {message && (
           <div className={messageClassName}>
             <p>{message}</p>
@@ -585,7 +586,7 @@ export default function ReceiptForm() {
 
         {errorDetails && (
           <details className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-            <summary className="cursor-pointer text-xs font-medium text-slate-600">ì˜¤ë¥˜ ìƒì„¸ ë³´ê¸°</summary>
+            <summary className="cursor-pointer text-xs font-medium text-slate-600">{strings.common.errorDetails}</summary>
             <pre className="mt-2 whitespace-pre-wrap break-words text-[11px]">
               {JSON.stringify(errorDetails, null, 2)}
             </pre>
@@ -598,7 +599,7 @@ export default function ReceiptForm() {
             onClick={handleSubmit}
             className="h-10 rounded-lg border border-slate-200 px-4 text-sm text-slate-600"
           >
-            ë‹¤ì‹œ ì‹œë„
+            {strings.common.retry}
           </button>
         )}
 
@@ -607,10 +608,10 @@ export default function ReceiptForm() {
           disabled={loading}
           className="h-11 rounded-lg bg-slate-900 px-5 text-sm font-medium text-white disabled:opacity-50"
         >
-          {loading ? 'ì €ì¥ ì¤‘...' : 'ì ‘ìˆ˜ ë“±ë¡'}
+          {loading ? strings.receipts.submitLoading : strings.receipts.submit}
         </button>
       </form>
-      {showDebugPanel && <DebugPanel logs={logs} title="ì ‘ìˆ˜ ë“±ë¡ ë¡œê·¸" onClear={() => setLogs([])} />}
+      {showDebugPanel && <DebugPanel logs={logs} title="Á¢¼ö µî·Ï ·Î±×" onClear={() => setLogs([])} />}
     </>
   );
 }

@@ -1,4 +1,4 @@
-'use client';
+ï»¿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -81,7 +81,7 @@ export default function AsAdminPage() {
         );
         const result = await response.json();
         if (!response.ok) {
-          setModalError(result.error || result.message || 'ÀÌ¹ÌÁö URL »ı¼º ½ÇÆĞ');
+          setModalError(result.error || result.message || 'ì´ë¯¸ì§€ URL ìƒì„± ì‹¤íŒ¨');
           setModalRequestId(result.requestId || null);
         } else if (result.signedUrl) {
           finalUrl = result.signedUrl;
@@ -89,7 +89,7 @@ export default function AsAdminPage() {
       }
       setModalImage({ url: finalUrl, title });
     } catch (error) {
-      setModalError('ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ');
+      setModalError('ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨');
     } finally {
       setImageLoading(false);
     }
@@ -101,13 +101,13 @@ export default function AsAdminPage() {
       <section className="rounded-xl bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-lg font-semibold">A/S ³»¿ª</h2>
-            <p className="text-sm text-slate-500">ÃÑ {receipts.length}°Ç</p>
+            <h2 className="text-lg font-semibold">A/S ë‚´ì—­</h2>
+            <p className="text-sm text-slate-500">ì´ {receipts.length}ê±´</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <input
               className="rounded-md border border-slate-200 px-3 py-2 text-sm"
-              placeholder="°í°´¸í/Â÷·®¹øÈ£ °Ë»ö"
+              placeholder="ê³ ê°ëª…/ì°¨ëŸ‰ë²ˆí˜¸ ê²€ìƒ‰"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -115,20 +115,20 @@ export default function AsAdminPage() {
               href="/api/as/export"
               className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white"
             >
-              ¿¢¼¿ ´Ù¿î·Îµå
+              ì—‘ì…€ ë‹¤ìš´ë¡œë“œ
             </a>
             <button
               type="button"
               onClick={handleExitAdmin}
               className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600"
             >
-              °ü¸®ÀÚ ¸ğµå ÇØÁ¦
+              ê´€ë¦¬ì ëª¨ë“œ í•´ì œ
             </button>
           </div>
         </div>
 
         {loading ? (
-          <p className="mt-6 text-sm text-slate-500">ºÒ·¯¿À´Â Áß...</p>
+          <p className="mt-6 text-sm text-slate-500">ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘...</p>
         ) : (
           <>
             <div className="mt-6 space-y-3 md:hidden">
@@ -141,7 +141,7 @@ export default function AsAdminPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm font-semibold">{receipt.customer_name || '??? ??'}</p>
+                      <p className="text-sm font-semibold">{receipt.customer_name || 'ê³ ê° ë¯¸ì…ë ¥'}</p>
                       <p className="text-xs text-slate-500">
                         {new Date(receipt.created_at).toLocaleDateString('ko-KR')}
                       </p>
@@ -154,9 +154,9 @@ export default function AsAdminPage() {
                     <Link
                       href={`/admin/as/${receipt.id}/edit`}
                       onClick={(event) => event.stopPropagation()}
-                      className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600"
+                      className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 whitespace-nowrap"
                     >
-                      ??
+                      ìˆ˜ì •
                     </Link>
                   </div>
                 </button>
@@ -166,12 +166,12 @@ export default function AsAdminPage() {
               <table className="min-w-full border-collapse text-sm">
               <thead className="border-b border-slate-200 text-left">
                 <tr>
-                  <th className="py-2 pr-4">µî·ÏÀÏ</th>
-                  <th className="py-2 pr-4">Â÷Á¾</th>
-                  <th className="py-2 pr-4">Â÷·®¹øÈ£</th>
-                  <th className="py-2 pr-4">¼º¸í</th>
-                  <th className="py-2 pr-4">ÀüÈ­¹øÈ£</th>
-                  <th className="py-2 pr-4">ÀÛ¾÷</th>
+                  <th className="py-2 pr-4">ë“±ë¡ì¼</th>
+                  <th className="py-2 pr-4">ì°¨ì¢…</th>
+                  <th className="py-2 pr-4">ì°¨ëŸ‰ë²ˆí˜¸</th>
+                  <th className="py-2 pr-4">ì„±ëª…</th>
+                  <th className="py-2 pr-4">ì „í™”ë²ˆí˜¸</th>
+                  <th className="py-2 pr-4">ì‘ì—…</th>
                 </tr>
               </thead>
               <tbody>
@@ -192,9 +192,9 @@ export default function AsAdminPage() {
                       <Link
                         href={`/admin/as/${receipt.id}/edit`}
                         onClick={(event) => event.stopPropagation()}
-                        className="rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-slate-300"
+                        className="rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-slate-300 whitespace-nowrap"
                       >
-                        ¼öÁ¤
+                        ìˆ˜ì •
                       </Link>
                     </td>
                   </tr>
@@ -209,48 +209,48 @@ export default function AsAdminPage() {
       {selected && (
         <section className="rounded-xl bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">A/S »ó¼¼</h3>
+            <h3 className="text-lg font-semibold">A/S ìƒì„¸</h3>
             <button className="text-sm text-slate-500" onClick={() => setSelected(null)}>
-              ´İ±â
+              ë‹«ê¸°
             </button>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <div>
-              <p className="text-xs text-slate-500">µî·ÏÀÏ</p>
+              <p className="text-xs text-slate-500">ë“±ë¡ì¼</p>
               <p className="text-sm">
                 {new Date(selected.created_at).toLocaleString('ko-KR')}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">Â÷Á¾</p>
+              <p className="text-xs text-slate-500">ì°¨ì¢…</p>
               <p className="text-sm">{selected.vehicle_name}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">Â÷·®¹øÈ£</p>
+              <p className="text-xs text-slate-500">ì°¨ëŸ‰ë²ˆí˜¸</p>
               <p className="text-sm">{selected.vehicle_number}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">ÁÖÇà°Å¸®</p>
+              <p className="text-xs text-slate-500">ì£¼í–‰ê±°ë¦¬</p>
               <p className="text-sm">{selected.mileage_km} km</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">¼º¸í</p>
+              <p className="text-xs text-slate-500">ì„±ëª…</p>
               <p className="text-sm">{selected.customer_name || '-'}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">ÀüÈ­¹øÈ£</p>
+              <p className="text-xs text-slate-500">ì „í™”ë²ˆí˜¸</p>
               <p className="text-sm">{selected.phone || '-'}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">±¸ÀÔÀÏÀÚ</p>
+              <p className="text-xs text-slate-500">êµ¬ì…ì¼ì</p>
               <p className="text-sm">{selected.purchase_date || '-'}</p>
             </div>
             <div className="md:col-span-2">
-              <p className="text-xs text-slate-500">Áõ»ó</p>
+              <p className="text-xs text-slate-500">ì¦ìƒ</p>
               <p className="text-sm">{selected.symptom || '-'}</p>
             </div>
             <div className="md:col-span-2">
-              <p className="text-xs text-slate-500">Á¤ºñ³»¿ë</p>
+              <p className="text-xs text-slate-500">ì •ë¹„ë‚´ìš©</p>
               <p className="text-sm">{selected.service_detail || '-'}</p>
             </div>
           </div>
@@ -258,29 +258,29 @@ export default function AsAdminPage() {
             {selected.vin_image_url ? (
               <button
                 type="button"
-                onClick={() => openImage(selected.vin_image_url, 'VIN »çÁø')}
+                onClick={() => openImage(selected.vin_image_url, 'VIN ì‚¬ì§„')}
                 className="flex items-center justify-between rounded-lg border border-slate-200 p-3 text-sm hover:border-slate-300"
               >
-                <span>VIN »çÁø Å©°Ô º¸±â</span>
-                <span className="text-xs text-slate-400">Å¬¸¯</span>
+                <span>VIN ì‚¬ì§„ í¬ê²Œ ë³´ê¸°</span>
+                <span className="text-xs text-slate-400">í´ë¦­</span>
               </button>
             ) : (
               <div className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-400">
-                VIN »çÁø ¾øÀ½
+                VIN ì‚¬ì§„ ì—†ìŒ
               </div>
             )}
             {selected.engine_image_url ? (
               <button
                 type="button"
-                onClick={() => openImage(selected.engine_image_url, '¿£Áø¹øÈ£ »çÁø')}
+                onClick={() => openImage(selected.engine_image_url, 'ì—”ì§„ë²ˆí˜¸ ì‚¬ì§„')}
                 className="flex items-center justify-between rounded-lg border border-slate-200 p-3 text-sm hover:border-slate-300"
               >
-                <span>¿£Áø¹øÈ£ »çÁø Å©°Ô º¸±â</span>
-                <span className="text-xs text-slate-400">Å¬¸¯</span>
+                <span>ì—”ì§„ë²ˆí˜¸ ì‚¬ì§„ í¬ê²Œ ë³´ê¸°</span>
+                <span className="text-xs text-slate-400">í´ë¦­</span>
               </button>
             ) : (
               <div className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-400">
-                ¿£Áø¹øÈ£ »çÁø ¾øÀ½
+                ì—”ì§„ë²ˆí˜¸ ì‚¬ì§„ ì—†ìŒ
               </div>
             )}
           </div>
@@ -303,11 +303,11 @@ export default function AsAdminPage() {
                 className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600"
                 onClick={() => setModalImage(null)}
               >
-                ´İ±â
+                ë‹«ê¸°
               </button>
             </div>
             {imageLoading ? (
-              <p className="text-sm text-slate-500">ÀÌ¹ÌÁö ºÒ·¯¿À´Â Áß...</p>
+              <p className="text-sm text-slate-500">ì´ë¯¸ì§€ ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘...</p>
             ) : (
               <div className="max-h-[80vh] overflow-auto">
                 <img
@@ -329,4 +329,8 @@ export default function AsAdminPage() {
     </main>
   );
 }
+
+
+
+
 

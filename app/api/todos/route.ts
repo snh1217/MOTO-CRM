@@ -11,14 +11,16 @@ function isValidDate(dateValue: string) {
 
 export async function GET(request: NextRequest) {
   const requestId = createRequestId();
+  const startedAt = performance.now();
+  console.log(`[todos][GET] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('Unauthorized', requestId, { status: 401 });
+    return jsonErrorResponse('로그인이 필요합니다.', requestId, { status: 401 });
   }
 
   const date = request.nextUrl.searchParams.get('date') ?? '';
   if (!isValidDate(date)) {
-    return jsonErrorResponse('Invalid date parameter.', requestId, { status: 400 });
+    return jsonErrorResponse('잘못된 날짜 형식입니다.', requestId, { status: 400 });
   }
 
   const supabaseServer = getSupabaseServer();
@@ -30,8 +32,12 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   if (error) {
-    return jsonErrorResponse('Fetch failed', requestId, { status: 500 }, serializeSupabaseError(error));
+    console.error(`[todos][GET] requestId=${requestId} error`, error);
+    return jsonErrorResponse('조회에 실패했습니다.', requestId, { status: 500 }, serializeSupabaseError(error));
   }
+
+  const totalMs = Math.round(performance.now() - startedAt);
+  console.log(`[todos][GET] requestId=${requestId} total=${totalMs}ms`);
 
   return jsonResponse(
     {
@@ -47,9 +53,11 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   const requestId = createRequestId();
+  const startedAt = performance.now();
+  console.log(`[todos][PUT] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('Unauthorized', requestId, { status: 401 });
+    return jsonErrorResponse('로그인이 필요합니다.', requestId, { status: 401 });
   }
 
   const body = await request.json().catch(() => ({}));
@@ -57,7 +65,7 @@ export async function PUT(request: NextRequest) {
   const items = Array.isArray(body.items) ? body.items.map((item: unknown) => String(item)) : [];
 
   if (!isValidDate(date)) {
-    return jsonErrorResponse('Invalid date parameter.', requestId, { status: 400 });
+    return jsonErrorResponse('잘못된 날짜 형식입니다.', requestId, { status: 400 });
   }
 
   const supabaseServer = getSupabaseServer();
@@ -73,8 +81,12 @@ export async function PUT(request: NextRequest) {
     .single();
 
   if (error) {
-    return jsonErrorResponse('Save failed', requestId, { status: 500 }, serializeSupabaseError(error));
+    console.error(`[todos][PUT] requestId=${requestId} error`, error);
+    return jsonErrorResponse('저장에 실패했습니다.', requestId, { status: 500 }, serializeSupabaseError(error));
   }
+
+  const totalMs = Math.round(performance.now() - startedAt);
+  console.log(`[todos][PUT] requestId=${requestId} total=${totalMs}ms`);
 
   return jsonResponse(
     {

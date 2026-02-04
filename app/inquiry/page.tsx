@@ -1,15 +1,14 @@
-import Nav from '@/components/Nav';
 import InquiryForm from '@/components/InquiryForm';
+import Nav from '@/components/Nav';
+import { strings } from '@/lib/strings.ko';
 
 export default function InquiryPage() {
   return (
     <main className="space-y-6">
       <Nav />
       <section className="rounded-xl bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">ë¬¸ì˜ ë“±ë¡</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          ê³ ê° ë¬¸ì˜ ë‚´ìš©ì„ ë‚¨ê²¨ì£¼ì‹œë©´ ë¹ ë¥´ê²Œ ì—°ë½ë“œë¦¬ê² ìŠµë‹ˆë‹¤.
-        </p>
+        <h2 className="text-lg font-semibold">{strings.inquiry.title}</h2>
+        <p className="mt-1 text-sm text-slate-500">¹®ÀÇ ³»¿ëÀ» ÀÔ·ÂÇÏ¸é °ü¸®ÀÚ¿¡°Ô Àü´ŞµË´Ï´Ù.</p>
         <div className="mt-6">
           <InquiryForm />
         </div>

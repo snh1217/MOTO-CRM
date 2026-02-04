@@ -3,34 +3,35 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { strings } from '@/lib/strings.ko';
 
 const groups = [
   {
-    label: 'Admin',
+    label: strings.nav.admin,
     items: [
-      { href: '/admin/home', label: 'Dashboard' },
-      { href: '/admin/users', label: 'User Management' }
+      { href: '/admin/home', label: strings.nav.dashboard },
+      { href: '/admin/users', label: strings.nav.users }
     ]
   },
   {
-    label: 'Reception',
+    label: strings.nav.reception,
     items: [
-      { href: '/receipts', label: 'Reception Register' },
-      { href: '/admin/receipts', label: 'Reception History' }
+      { href: '/receipts', label: strings.nav.receptionRegister },
+      { href: '/admin/receipts', label: strings.nav.receptionHistory }
     ]
   },
   {
-    label: 'Inquiries',
+    label: strings.nav.inquiries,
     items: [
-      { href: '/inquiry', label: 'Inquiry Register' },
-      { href: '/admin/inquiries', label: 'Inquiry History' }
+      { href: '/inquiry', label: strings.nav.inquiryRegister },
+      { href: '/admin/inquiries', label: strings.nav.inquiryHistory }
     ]
   },
   {
-    label: 'A/S',
+    label: strings.nav.as,
     items: [
-      { href: '/as', label: 'A/S Register' },
-      { href: '/admin/as', label: 'A/S History' }
+      { href: '/as', label: strings.nav.asRegister },
+      { href: '/admin/as', label: strings.nav.asHistory }
     ]
   }
 ];
@@ -42,20 +43,20 @@ export default function Nav() {
   return (
     <header className="mb-5 flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm">
       <div>
-        <h1 className="text-xl font-semibold">MOTO-CRM</h1>
-        <p className="text-xs text-slate-500">??/?? ?? ???</p>
+        <h1 className="text-xl font-semibold">{strings.appName}</h1>
+        <p className="text-xs text-slate-500">센터 운영 대시보드</p>
       </div>
 
       <nav className="hidden items-center gap-3 md:flex">
         <Link
           href="/admin/home"
-          className={`group relative flex min-h-[44px] items-center rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
+          className={`group relative flex min-h-[44px] items-center rounded-full px-4 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm ${
             pathname === '/admin/home'
               ? 'bg-slate-900 text-white'
               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
           }`}
         >
-          Dashboard
+          {strings.nav.home}
           <span className="pointer-events-none absolute left-4 right-4 -bottom-1 h-0.5 scale-x-0 rounded-full bg-slate-900 transition-transform duration-200 group-hover:scale-x-100" />
         </Link>
 
@@ -95,7 +96,7 @@ export default function Nav() {
             pathname === '/admin/home' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'
           }`}
         >
-          Dashboard
+          {strings.nav.home}
         </Link>
         {groups.map((group) => (
           <div key={group.label} className="rounded-lg border border-slate-200">

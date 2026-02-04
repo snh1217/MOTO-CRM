@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const password = String(body.password ?? '');
 
     if (!identifier || !password) {
-      return jsonErrorResponse('???? ????? ??????.', requestId, { status: 400 });
+      return jsonErrorResponse('아이디와 비밀번호를 입력해 주세요.', requestId, { status: 400 });
     }
 
     const supabaseServer = getSupabaseServer();
@@ -23,22 +23,22 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (error) {
-      return jsonErrorResponse('??? ??', requestId, { status: 500 }, serializeSupabaseError(error));
+      return jsonErrorResponse('로그인 처리 중 오류가 발생했습니다.', requestId, { status: 500 }, serializeSupabaseError(error));
     }
 
     if (!data || !data.is_active) {
-      return jsonErrorResponse('??? ??? ???? ????.', requestId, { status: 401 });
+      return jsonErrorResponse('아이디 또는 비밀번호가 올바르지 않습니다.', requestId, { status: 401 });
     }
 
     const valid = await bcrypt.compare(password, data.password_hash);
     if (!valid) {
-      return jsonErrorResponse('??? ??? ???? ????.', requestId, { status: 401 });
+      return jsonErrorResponse('아이디 또는 비밀번호가 올바르지 않습니다.', requestId, { status: 401 });
     }
 
     const token = await signAdminToken({ role: 'admin', userId: data.id, centerId: data.center_id });
     const response = jsonResponse(
       {
-        message: '??? ??',
+        message: '로그인 성공',
         user: {
           id: data.id,
           email: data.email,
@@ -52,6 +52,6 @@ export async function POST(request: NextRequest) {
     response.cookies.set(buildAdminCookie(token));
     return response;
   } catch (error) {
-    return jsonErrorResponse('?? ??? ??????.', requestId, { status: 500 });
+    return jsonErrorResponse('서버 오류가 발생했습니다.', requestId, { status: 500 });
   }
 }
