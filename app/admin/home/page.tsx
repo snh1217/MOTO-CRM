@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 import { strings } from '@/lib/strings.ko';
@@ -56,7 +56,7 @@ export default function AdminHomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  const fetchTodos = async (dateKey: string, setter: (next: TodoState) => void) => {
+  const fetchTodos = async (dateKey: string, setter: Dispatch<SetStateAction<TodoState>>) => {
     setter({ items: [], loading: true, saving: false, error: null, requestId: null });
 
     try {
@@ -106,7 +106,11 @@ export default function AdminHomePage() {
     fetchTodos(tomorrowKey, setTomorrow);
   }, [tomorrowKey]);
 
-  const saveTodos = async (dateKey: string, items: string[], setter: (next: TodoState) => void) => {
+  const saveTodos = async (
+    dateKey: string,
+    items: string[],
+    setter: Dispatch<SetStateAction<TodoState>>
+  ) => {
     setter((prev) => ({ ...prev, saving: true, error: null, requestId: null }));
     const response = await fetchWithTimeout(
       '/api/todos',
@@ -138,13 +142,21 @@ export default function AdminHomePage() {
     });
   };
 
-  const addTodo = (value: string, list: TodoState, setter: (next: TodoState) => void) => {
+  const addTodo = (
+    value: string,
+    list: TodoState,
+    setter: Dispatch<SetStateAction<TodoState>>
+  ) => {
     const trimmed = value.trim();
     if (!trimmed) return;
     setter({ ...list, items: [...list.items, trimmed] });
   };
 
-  const removeTodo = (index: number, list: TodoState, setter: (next: TodoState) => void) => {
+  const removeTodo = (
+    index: number,
+    list: TodoState,
+    setter: Dispatch<SetStateAction<TodoState>>
+  ) => {
     setter({ ...list, items: list.items.filter((_, idx) => idx !== index) });
   };
 
