@@ -1,4 +1,4 @@
-﻿create table if not exists admin_requests (
+create table if not exists admin_requests (
   id uuid primary key default gen_random_uuid(),
   username text not null unique,
   password_hash text not null,
