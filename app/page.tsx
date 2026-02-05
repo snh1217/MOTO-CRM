@@ -7,7 +7,7 @@ export default function HomePage() {
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
         <header className="rounded-2xl bg-slate-900 px-6 py-5 text-white">
           <h1 className="text-2xl font-semibold">{strings.appName}</h1>
-          <p className="mt-2 text-sm text-slate-200">ºæ≈Õ ∑Œ±◊¿Œ</p>
+          <p className="mt-2 text-sm text-slate-200">ÏÑºÌÑ∞ Î°úÍ∑∏Ïù∏</p>
         </header>
         <AdminLoginForm />
       </div>

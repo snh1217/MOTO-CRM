@@ -27,7 +27,7 @@ export default function InquiryForm() {
     setRequestId(null);
 
     try {
-      addLog('submit', '¹®ÀÇ ÀúÀå ¿äÃ» ½ÃÀÛ');
+      addLog('submit', 'ë¬¸ì˜ ì €ì¥ ìš”ì²­ ì‹œì‘');
       const response = await fetchWithTimeout('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -42,19 +42,19 @@ export default function InquiryForm() {
       setRequestId(result.requestId || null);
 
       if (!response.ok) {
-        setMessage(result.error || result.message || '¹®ÀÇ µî·Ï¿¡ ½ÇÆĞÇß½À´Ï´Ù.');
-        addLog('error', `¿äÃ» ½ÇÆĞ: ${result.error || result.message}`);
+        setMessage(result.error || result.message || 'ë¬¸ì˜ ë“±ë¡ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.');
+        addLog('error', `ìš”ì²­ ì‹¤íŒ¨: ${result.error || result.message}`);
         return;
       }
 
       setCustomerName('');
       setPhone('');
       setContent('');
-      setMessage(result.message || '¹®ÀÇ°¡ µî·ÏµÇ¾ú½À´Ï´Ù.');
-      addLog('success', '¹®ÀÇ µî·Ï ¿Ï·á');
+      setMessage(result.message || 'ë¬¸ì˜ê°€ ë“±ë¡ë˜ì—ˆìŠµë‹ˆë‹¤.');
+      addLog('success', 'ë¬¸ì˜ ë“±ë¡ ì™„ë£Œ');
     } catch (error) {
-      setMessage('¿äÃ» Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.');
-      addLog('error', '¿äÃ» Ã³¸® Áß ¿¹¿Ü ¹ß»ı');
+      setMessage('ìš”ì²­ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.');
+      addLog('error', 'ìš”ì²­ ì²˜ë¦¬ ì¤‘ ì˜ˆì™¸ ë°œìƒ');
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ export default function InquiryForm() {
     <>
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="flex flex-col gap-1 text-sm">
-          ¼º¸í
+          ì„±ëª…
           <input
             className="h-11 rounded-lg border border-slate-200 px-3 text-sm"
             value={customerName}
@@ -73,7 +73,7 @@ export default function InquiryForm() {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          ÀüÈ­¹øÈ£
+          ì „í™”ë²ˆí˜¸
           <input
             className="h-11 rounded-lg border border-slate-200 px-3 text-sm"
             value={phone}
@@ -83,7 +83,7 @@ export default function InquiryForm() {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          ¹®ÀÇ ³»¿ë
+          ë¬¸ì˜ ë‚´ìš©
           <textarea
             className="min-h-[120px] rounded-lg border border-slate-200 px-3 py-2 text-sm"
             value={content}
@@ -102,10 +102,10 @@ export default function InquiryForm() {
           disabled={loading}
           className="h-11 rounded-lg bg-slate-900 px-5 text-sm font-medium text-white disabled:opacity-50"
         >
-          {loading ? 'ÀúÀå Áß...' : strings.inquiry.title}
+          {loading ? 'ì €ì¥ ì¤‘...' : strings.inquiry.title}
         </button>
       </form>
-      {showDebugPanel && <DebugPanel logs={logs} title="¹®ÀÇ µî·Ï ·Î±×" onClear={() => setLogs([])} />}
+      {showDebugPanel && <DebugPanel logs={logs} title="ë¬¸ì˜ ë“±ë¡ ë¡œê·¸" onClear={() => setLogs([])} />}
     </>
   );
 }

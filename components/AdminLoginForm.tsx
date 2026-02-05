@@ -30,13 +30,13 @@ export default function AdminLoginForm() {
       );
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError(result.error || result.message || '·Î±×ÀÎ¿¡ ½ÇÆĞÇß½À´Ï´Ù.');
+        setError(result.error || result.message || 'ë¡œê·¸ì¸ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.');
         setRequestId(result.requestId || null);
         return;
       }
       router.replace('/admin/home');
     } catch (err) {
-      setError('·Î±×ÀÎ¿¡ ½ÇÆĞÇß½À´Ï´Ù.');
+      setError('ë¡œê·¸ì¸ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.');
     } finally {
       setLoading(false);
     }
