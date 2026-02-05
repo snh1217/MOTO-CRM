@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 import { strings } from '@/lib/strings.ko';
@@ -32,13 +33,13 @@ export default function AdminLoginForm() {
       );
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError(result.error || result.message || '濡쒓렇?몄뿉 ?ㅽ뙣?덉뒿?덈떎.');
+        setError(result.error || result.message || '로그인에 실패했습니다.');
         setRequestId(result.requestId || null);
         return;
       }
       router.replace('/admin/home');
     } catch (err) {
-      setError('濡쒓렇?몄뿉 ?ㅽ뙣?덉뒿?덈떎.');
+      setError('로그인에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -82,6 +83,11 @@ export default function AdminLoginForm() {
           {loading ? strings.login.submitting : strings.login.submit}
         </button>
       </form>
+      <div className="mt-4 text-sm text-slate-500">
+        <Link href="/admin/request" className="text-slate-900 underline">
+          {strings.login.requestAccount}
+        </Link>
+      </div>
     </section>
   );
 }

@@ -10,7 +10,9 @@ const groups = [
     label: strings.nav.admin,
     items: [
       { href: '/admin/home', label: strings.nav.dashboard },
-      { href: '/admin/users', label: strings.nav.users }
+      { href: '/admin/users', label: strings.nav.users },
+      { href: '/admin/requests', label: strings.nav.accountRequests },
+      { href: '/admin/forum', label: strings.nav.forum }
     ]
   },
   {

@@ -5,6 +5,7 @@
     admin: '관리자',
     dashboard: '대시보드',
     users: '사용자 관리',
+    accountRequests: '계정 승인',
     reception: '접수',
     receptionRegister: '접수 등록',
     receptionHistory: '접수 내역',
@@ -13,7 +14,8 @@
     inquiryHistory: '문의 내역',
     as: 'A/S',
     asRegister: 'A/S 접수',
-    asHistory: 'A/S 내역'
+    asHistory: 'A/S 내역',
+    forum: '만담회'
   },
   login: {
     title: '센터 로그인',
@@ -21,7 +23,35 @@
     identifier: '이메일 또는 사용자명',
     password: '비밀번호',
     submit: '로그인',
-    submitting: '로그인 중...'
+    submitting: '로그인 중...',
+    requestAccount: '계정 생성 요청'
+  },
+  accountRequest: {
+    title: '계정 생성 요청',
+    description: '센터명, 사용자명, 비밀번호를 입력하면 승인 후 계정이 생성됩니다.',
+    centerName: '센터명',
+    username: '사용자명',
+    password: '비밀번호',
+    submit: '요청 제출',
+    submitting: '요청 중...',
+    success: '요청이 접수되었습니다. 승인 후 로그인할 수 있습니다.'
+  },
+  accountApproval: {
+    title: '계정 승인',
+    description: '계정 요청을 확인하고 센터를 지정해 승인합니다.',
+    approve: '승인',
+    reject: '거절',
+    pending: '대기',
+    approved: '승인됨',
+    rejected: '거절됨',
+    selectCenter: '센터 선택'
+  },
+  forum: {
+    title: '만담회',
+    description: '센터 내부 공지/잡담을 자유롭게 남기세요.',
+    placeholder: '내용을 입력하세요.',
+    submit: '등록',
+    submitting: '등록 중...'
   },
   todos: {
     today: '오늘 할 일',

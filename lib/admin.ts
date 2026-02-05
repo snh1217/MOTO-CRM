@@ -8,6 +8,7 @@ export type AdminUser = {
   username: string | null;
   center_id: string;
   is_active: boolean;
+  is_superadmin?: boolean;
 };
 
 export async function requireAdmin(request: NextRequest) {
@@ -20,7 +21,7 @@ export async function requireAdmin(request: NextRequest) {
     const supabaseServer = getSupabaseServer();
     const { data, error } = await supabaseServer
       .from('admin_users')
-      .select('id, email, username, center_id, is_active')
+      .select('id, email, username, center_id, is_active, is_superadmin')
       .eq('id', payload.userId)
       .single();
 
@@ -32,4 +33,12 @@ export async function requireAdmin(request: NextRequest) {
   } catch (error) {
     return null;
   }
+}
+
+export async function requireSuperAdmin(request: NextRequest) {
+  const admin = await requireAdmin(request);
+  if (!admin || !admin.is_superadmin) {
+    return null;
+  }
+  return admin;
 }
