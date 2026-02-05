@@ -10,6 +10,7 @@ export default function AdminLoginForm() {
   const router = useRouter();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
@@ -26,7 +27,7 @@ export default function AdminLoginForm() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identifier, password }),
+          body: JSON.stringify({ identifier, password, remember }),
           credentials: 'include'
         },
         12000
@@ -68,6 +69,15 @@ export default function AdminLoginForm() {
             onChange={(event) => setPassword(event.target.value)}
             required
           />
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-slate-300"
+            checked={remember}
+            onChange={(event) => setRemember(event.target.checked)}
+          />
+          자동 로그인
         </label>
         {error && (
           <p className="text-sm text-red-500">

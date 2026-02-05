@@ -15,7 +15,7 @@
     as: 'A/S',
     asRegister: 'A/S 접수',
     asHistory: 'A/S 내역',
-    forum: '만담회'
+    forum: '센터게시판'
   },
   login: {
     title: '센터 로그인',
@@ -47,7 +47,7 @@
     selectCenter: '센터 선택'
   },
   forum: {
-    title: '만담회',
+    title: '센터게시판',
     description: '센터 내부 공지/잡담을 자유롭게 남기세요.',
     placeholder: '내용을 입력하세요.',
     submit: '등록',
@@ -136,7 +136,10 @@
     username: '사용자명(선택)',
     password: '비밀번호',
     center: '센터',
-    listTitle: '사용자 목록'
+    listTitle: '사용자 목록',
+    resetPassword: '비밀번호 초기화',
+    deleteUser: '삭제',
+    adminToggle: '관리자 권한'
   }
 } as const;
 

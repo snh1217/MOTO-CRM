@@ -7,15 +7,6 @@ import { strings } from '@/lib/strings.ko';
 
 const groups = [
   {
-    label: strings.nav.admin,
-    items: [
-      { href: '/admin/home', label: strings.nav.dashboard },
-      { href: '/admin/users', label: strings.nav.users },
-      { href: '/admin/requests', label: strings.nav.accountRequests },
-      { href: '/admin/forum', label: strings.nav.forum }
-    ]
-  },
-  {
     label: strings.nav.reception,
     items: [
       { href: '/receipts', label: strings.nav.receptionRegister },
@@ -61,6 +52,17 @@ export default function Nav() {
           {strings.nav.home}
           <span className="pointer-events-none absolute left-4 right-4 -bottom-1 h-0.5 scale-x-0 rounded-full bg-slate-900 transition-transform duration-200 group-hover:scale-x-100" />
         </Link>
+        <Link
+          href="/admin/forum"
+          className={`group relative flex min-h-[44px] items-center rounded-full px-4 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm ${
+            pathname === '/admin/forum'
+              ? 'bg-slate-900 text-white'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          {strings.nav.forum}
+          <span className="pointer-events-none absolute left-4 right-4 -bottom-1 h-0.5 scale-x-0 rounded-full bg-slate-900 transition-transform duration-200 group-hover:scale-x-100" />
+        </Link>
 
         {groups.map((group) => (
           <div key={group.label} className="relative group">
@@ -99,6 +101,14 @@ export default function Nav() {
           }`}
         >
           {strings.nav.home}
+        </Link>
+        <Link
+          href="/admin/forum"
+          className={`min-h-[44px] rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+            pathname === '/admin/forum' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'
+          }`}
+        >
+          {strings.nav.forum}
         </Link>
         {groups.map((group) => (
           <div key={group.label} className="rounded-lg border border-slate-200">

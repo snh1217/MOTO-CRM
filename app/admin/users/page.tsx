@@ -18,6 +18,7 @@ type AdminUser = {
   username: string | null;
   center_id: string;
   is_active: boolean;
+  is_superadmin?: boolean;
   created_at: string;
   centers?: { name: string; code: string } | null;
 };
@@ -33,6 +34,7 @@ export default function AdminUsersPage() {
   const [formUsername, setFormUsername] = useState('');
   const [formPassword, setFormPassword] = useState('');
   const [saving, setSaving] = useState(false);
+  const [actionId, setActionId] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -47,6 +49,11 @@ export default function AdminUsersPage() {
 
       if (usersRes.status === 401 || centersRes.status === 401) {
         router.replace('/');
+        return;
+      }
+
+      if (usersRes.status === 403 || centersRes.status === 403) {
+        setError('접근 권한이 없습니다.');
         return;
       }
 
@@ -115,6 +122,102 @@ export default function AdminUsersPage() {
       setError('사용자 생성에 실패했습니다.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleResetPassword = async (userId: string) => {
+    const nextPassword = window.prompt('새 비밀번호를 입력하세요.');
+    if (!nextPassword) return;
+
+    setActionId(userId);
+    setError(null);
+    setRequestId(null);
+
+    try {
+      const response = await fetchWithTimeout(
+        `/api/admin/users/${userId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: nextPassword }),
+          credentials: 'include'
+        },
+        12000
+      );
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(result.error || result.message || '비밀번호 초기화에 실패했습니다.');
+        setRequestId(result.requestId || null);
+        return;
+      }
+
+      setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, ...result.data } : user)));
+    } catch (err) {
+      setError('비밀번호 초기화에 실패했습니다.');
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleDelete = async (userId: string) => {
+    if (!window.confirm('정말 삭제하시겠습니까?')) return;
+
+    setActionId(userId);
+    setError(null);
+    setRequestId(null);
+
+    try {
+      const response = await fetchWithTimeout(
+        `/api/admin/users/${userId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include'
+        },
+        12000
+      );
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(result.error || result.message || '사용자 삭제에 실패했습니다.');
+        setRequestId(result.requestId || null);
+        return;
+      }
+
+      setUsers((prev) => prev.filter((user) => user.id !== userId));
+    } catch (err) {
+      setError('사용자 삭제에 실패했습니다.');
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleToggleSuperAdmin = async (userId: string, nextValue: boolean) => {
+    setActionId(userId);
+    setError(null);
+    setRequestId(null);
+
+    try {
+      const response = await fetchWithTimeout(
+        `/api/admin/users/${userId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_superadmin: nextValue }),
+          credentials: 'include'
+        },
+        12000
+      );
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(result.error || result.message || '권한 변경에 실패했습니다.');
+        setRequestId(result.requestId || null);
+        return;
+      }
+
+      setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, ...result.data } : user)));
+    } catch (err) {
+      setError('권한 변경에 실패했습니다.');
+    } finally {
+      setActionId(null);
     }
   };
 
@@ -194,7 +297,33 @@ export default function AdminUsersPage() {
                 <div key={user.id} className="rounded-lg border border-slate-200 p-4 text-sm">
                   <p className="font-semibold">{user.email || user.username || '이름 없음'}</p>
                   <p className="text-xs text-slate-500">{user.centers?.name || '센터'}</p>
-                  <p className="mt-1 text-xs text-slate-400">
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <label className="flex items-center gap-2 text-xs text-slate-600">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(user.is_superadmin)}
+                        onChange={(event) => handleToggleSuperAdmin(user.id, event.target.checked)}
+                      />
+                      {strings.adminUsers.adminToggle}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleResetPassword(user.id)}
+                      disabled={actionId === user.id}
+                      className="h-8 whitespace-nowrap rounded-md border border-slate-200 px-3 text-xs"
+                    >
+                      {strings.adminUsers.resetPassword}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(user.id)}
+                      disabled={actionId === user.id}
+                      className="h-8 whitespace-nowrap rounded-md border border-red-200 px-3 text-xs text-red-600"
+                    >
+                      {strings.adminUsers.deleteUser}
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-400">
                     {new Date(user.created_at).toLocaleString('ko-KR')}
                   </p>
                 </div>
@@ -207,7 +336,9 @@ export default function AdminUsersPage() {
                     <th className="py-2 pr-4">이메일</th>
                     <th className="py-2 pr-4">사용자명</th>
                     <th className="py-2 pr-4">센터</th>
+                    <th className="py-2 pr-4">관리자</th>
                     <th className="py-2 pr-4">생성일</th>
+                    <th className="py-2 pr-4">관리</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -217,7 +348,34 @@ export default function AdminUsersPage() {
                       <td className="py-2 pr-4">{user.username || '-'}</td>
                       <td className="py-2 pr-4">{user.centers?.name || '-'}</td>
                       <td className="py-2 pr-4">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(user.is_superadmin)}
+                          onChange={(event) => handleToggleSuperAdmin(user.id, event.target.checked)}
+                        />
+                      </td>
+                      <td className="py-2 pr-4">
                         {new Date(user.created_at).toLocaleDateString('ko-KR')}
+                      </td>
+                      <td className="py-2 pr-4">
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleResetPassword(user.id)}
+                            disabled={actionId === user.id}
+                            className="h-8 whitespace-nowrap rounded-md border border-slate-200 px-3 text-xs"
+                          >
+                            {strings.adminUsers.resetPassword}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(user.id)}
+                            disabled={actionId === user.id}
+                            className="h-8 whitespace-nowrap rounded-md border border-red-200 px-3 text-xs text-red-600"
+                          >
+                            {strings.adminUsers.deleteUser}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

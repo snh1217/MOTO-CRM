@@ -40,6 +40,8 @@ export default function AdminHomePage() {
   });
   const [todayInput, setTodayInput] = useState('');
   const [tomorrowInput, setTomorrowInput] = useState('');
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const tomorrowKey = useMemo(() => {
     const date = new Date(todayKey);
@@ -54,6 +56,23 @@ export default function AdminHomePage() {
     }, 1000 * 60);
 
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const response = await fetch('/api/admin/me', { credentials: 'include' });
+        if (!response.ok) {
+          return;
+        }
+        const result = await response.json().catch(() => ({}));
+        setIsSuperAdmin(Boolean(result.data?.is_superadmin));
+      } catch (err) {
+        setIsSuperAdmin(false);
+      }
+    };
+
+    fetchMe();
   }, []);
 
   const fetchTodos = async (dateKey: string, setter: Dispatch<SetStateAction<TodoState>>) => {
@@ -160,9 +179,55 @@ export default function AdminHomePage() {
     setter({ ...list, items: list.items.filter((_, idx) => idx !== index) });
   };
 
+  const handleLogout = async () => {
+    setLogoutError(null);
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+      router.replace('/');
+    } catch (error) {
+      setLogoutError('로그아웃에 실패했습니다.');
+    }
+  };
+
   return (
     <main className="space-y-6">
       <Nav />
+      <section className="rounded-xl bg-white p-4 text-sm shadow-sm md:flex md:items-center md:justify-between">
+        <div className="space-y-1">
+          <p className="font-semibold">로그인 상태</p>
+          {isSuperAdmin && (
+            <p className="text-xs text-slate-500">슈퍼관리자 권한이 활성화되어 있습니다.</p>
+          )}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2 md:mt-0">
+          {isSuperAdmin && (
+            <>
+              <button
+                type="button"
+                onClick={() => router.push('/admin/users')}
+                className="h-10 whitespace-nowrap rounded-md border border-slate-200 px-3 text-xs"
+              >
+                사용자 관리
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/admin/requests')}
+                className="h-10 whitespace-nowrap rounded-md border border-slate-200 px-3 text-xs"
+              >
+                계정 승인
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="h-10 whitespace-nowrap rounded-md bg-slate-900 px-3 text-xs text-white"
+          >
+            {strings.common.logout}
+          </button>
+        </div>
+        {logoutError && <p className="mt-2 text-xs text-red-500">{logoutError}</p>}
+      </section>
       <section className="rounded-2xl bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-6 md:flex-row">
           <div className="flex-1">

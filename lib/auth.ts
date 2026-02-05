@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const TOKEN_COOKIE = 'admin_session';
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
+const TOKEN_REMEMBER_TTL_SECONDS = 60 * 60 * 24 * 30;
 
 type AdminTokenPayload = {
   role: 'admin';
@@ -42,16 +43,21 @@ export function getTokenFromRequest(request: NextRequest) {
   return request.cookies.get(TOKEN_COOKIE)?.value;
 }
 
-export function buildAdminCookie(token: string) {
-  return {
+export function buildAdminCookie(token: string, remember?: boolean) {
+  const cookie = {
     name: TOKEN_COOKIE,
     value: token,
     httpOnly: true,
     sameSite: 'lax' as const,
     secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: TOKEN_TTL_SECONDS
-  };
+    path: '/'
+  } as const;
+
+  if (remember) {
+    return { ...cookie, maxAge: TOKEN_REMEMBER_TTL_SECONDS };
+  }
+
+  return cookie;
 }
 
 export function clearAdminCookie() {

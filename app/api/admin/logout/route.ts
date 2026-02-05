@@ -1,4 +1,4 @@
-import { clearAdminCookie } from '@/lib/auth';
+﻿import { clearAdminCookie } from '@/lib/auth';
 import { createRequestId, jsonResponse } from '@/lib/apiUtils';
 
 export async function POST() {

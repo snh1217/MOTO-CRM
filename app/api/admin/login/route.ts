@@ -10,6 +10,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const identifier = String(body.identifier ?? '').trim();
     const password = String(body.password ?? '');
+    const remember = Boolean(body.remember);
 
     if (!identifier || !password) {
       return jsonErrorResponse('아이디와 비밀번호를 입력해 주세요.', requestId, { status: 400 });
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
       { status: 200 },
       requestId
     );
-    response.cookies.set(buildAdminCookie(token));
+    response.cookies.set(buildAdminCookie(token, remember));
     return response;
   } catch (error) {
     return jsonErrorResponse('서버 오류가 발생했습니다.', requestId, { status: 500 });
