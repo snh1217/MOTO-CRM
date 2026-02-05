@@ -1,3 +1,5 @@
+﻿'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
@@ -30,13 +32,13 @@ export default function AdminLoginForm() {
       );
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError(result.error || result.message || '로그인에 실패했습니다.');
+        setError(result.error || result.message || '濡쒓렇?몄뿉 ?ㅽ뙣?덉뒿?덈떎.');
         setRequestId(result.requestId || null);
         return;
       }
       router.replace('/admin/home');
     } catch (err) {
-      setError('로그인에 실패했습니다.');
+      setError('濡쒓렇?몄뿉 ?ㅽ뙣?덉뒿?덈떎.');
     } finally {
       setLoading(false);
     }
