@@ -1,4 +1,4 @@
-'use client';
+ï»¿'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -54,13 +54,13 @@ export default function AdminUsersPage() {
       const centersResult = await centersRes.json().catch(() => ({}));
 
       if (!usersRes.ok) {
-        setError(usersResult.error || usersResult.message || '»ç¿ëÀÚ Á¶È¸¿¡ ½ÇÆĞÇß½À´Ï´Ù.');
+        setError(usersResult.error || usersResult.message || 'ì‚¬ìš©ì ì¡°íšŒì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.');
         setRequestId(usersResult.requestId || null);
         return;
       }
 
       if (!centersRes.ok) {
-        setError(centersResult.error || centersResult.message || '¼¾ÅÍ Á¶È¸¿¡ ½ÇÆĞÇß½À´Ï´Ù.');
+        setError(centersResult.error || centersResult.message || 'ì„¼í„° ì¡°íšŒì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.');
         setRequestId(centersResult.requestId || null);
         return;
       }
@@ -68,7 +68,7 @@ export default function AdminUsersPage() {
       setUsers(usersResult.data || []);
       setCenters(centersResult.data || []);
     } catch (err) {
-      setError('µ¥ÀÌÅÍ¸¦ ºÒ·¯¿À´Â Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.');
+      setError('ë°ì´í„°ë¥¼ ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.');
     } finally {
       setLoading(false);
     }
@@ -102,7 +102,7 @@ export default function AdminUsersPage() {
 
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError(result.error || result.message || '»ı¼º¿¡ ½ÇÆĞÇß½À´Ï´Ù.');
+        setError(result.error || result.message || 'ì‚¬ìš©ì ìƒì„±ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.');
         setRequestId(result.requestId || null);
         return;
       }
@@ -112,7 +112,7 @@ export default function AdminUsersPage() {
       setFormUsername('');
       setFormPassword('');
     } catch (err) {
-      setError('»ı¼º¿¡ ½ÇÆĞÇß½À´Ï´Ù.');
+      setError('ì‚¬ìš©ì ìƒì„±ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.');
     } finally {
       setSaving(false);
     }
@@ -157,7 +157,7 @@ export default function AdminUsersPage() {
           <label className="flex flex-col gap-1 text-sm">
             {strings.adminUsers.center}
             <select className="h-11 rounded-md border border-slate-200 px-3" disabled>
-              {centers.length === 0 && <option>ºÒ·¯¿À´Â Áß...</option>}
+              {centers.length === 0 && <option>ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘...</option>}
               {centers.map((center) => (
                 <option key={center.id} value={center.id}>
                   {center.name} ({center.code})
@@ -192,8 +192,8 @@ export default function AdminUsersPage() {
             <div className="mt-4 space-y-3 md:hidden">
               {users.map((user) => (
                 <div key={user.id} className="rounded-lg border border-slate-200 p-4 text-sm">
-                  <p className="font-semibold">{user.email || user.username || 'ÀÌ¸§ ¾øÀ½'}</p>
-                  <p className="text-xs text-slate-500">{user.centers?.name || '¼¾ÅÍ'}</p>
+                  <p className="font-semibold">{user.email || user.username || 'ì´ë¦„ ì—†ìŒ'}</p>
+                  <p className="text-xs text-slate-500">{user.centers?.name || 'ì„¼í„°'}</p>
                   <p className="mt-1 text-xs text-slate-400">
                     {new Date(user.created_at).toLocaleString('ko-KR')}
                   </p>
@@ -204,10 +204,10 @@ export default function AdminUsersPage() {
               <table className="min-w-full border-collapse text-sm">
                 <thead className="border-b border-slate-200 text-left">
                   <tr>
-                    <th className="py-2 pr-4">ÀÌ¸ŞÀÏ</th>
-                    <th className="py-2 pr-4">»ç¿ëÀÚ¸í</th>
-                    <th className="py-2 pr-4">¼¾ÅÍ</th>
-                    <th className="py-2 pr-4">»ı¼ºÀÏ</th>
+                    <th className="py-2 pr-4">ì´ë©”ì¼</th>
+                    <th className="py-2 pr-4">ì‚¬ìš©ìëª…</th>
+                    <th className="py-2 pr-4">ì„¼í„°</th>
+                    <th className="py-2 pr-4">ìƒì„±ì¼</th>
                   </tr>
                 </thead>
                 <tbody>

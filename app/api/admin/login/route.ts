@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server';
+ï»¿import type { NextRequest } from 'next/server';
 import { buildAdminCookie, signAdminToken } from '@/lib/auth';
 import { createRequestId, jsonErrorResponse, jsonResponse, serializeSupabaseError } from '@/lib/apiUtils';
 import { getSupabaseServer } from '@/lib/supabase';
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const password = String(body.password ?? '');
 
     if (!identifier || !password) {
-      return jsonErrorResponse('¾ÆÀÌµğ¿Í ºñ¹Ğ¹øÈ£¸¦ ÀÔ·ÂÇØ ÁÖ¼¼¿ä.', requestId, { status: 400 });
+      return jsonErrorResponse('ì•„ì´ë””ì™€ ë¹„ë°€ë²ˆí˜¸ë¥¼ ì…ë ¥í•´ ì£¼ì„¸ìš”.', requestId, { status: 400 });
     }
 
     const supabaseServer = getSupabaseServer();
@@ -23,22 +23,27 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (error) {
-      return jsonErrorResponse('·Î±×ÀÎ Ã³¸® Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', requestId, { status: 500 }, serializeSupabaseError(error));
+      return jsonErrorResponse(
+        'ë¡œê·¸ì¸ ì²˜ë¦¬ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.',
+        requestId,
+        { status: 500 },
+        serializeSupabaseError(error)
+      );
     }
 
     if (!data || !data.is_active) {
-      return jsonErrorResponse('¾ÆÀÌµğ ¶Ç´Â ºñ¹Ğ¹øÈ£°¡ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.', requestId, { status: 401 });
+      return jsonErrorResponse('ì•„ì´ë”” ë˜ëŠ” ë¹„ë°€ë²ˆí˜¸ê°€ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.', requestId, { status: 401 });
     }
 
     const valid = await bcrypt.compare(password, data.password_hash);
     if (!valid) {
-      return jsonErrorResponse('¾ÆÀÌµğ ¶Ç´Â ºñ¹Ğ¹øÈ£°¡ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.', requestId, { status: 401 });
+      return jsonErrorResponse('ì•„ì´ë”” ë˜ëŠ” ë¹„ë°€ë²ˆí˜¸ê°€ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.', requestId, { status: 401 });
     }
 
     const token = await signAdminToken({ role: 'admin', userId: data.id, centerId: data.center_id });
     const response = jsonResponse(
       {
-        message: '·Î±×ÀÎ ¼º°ø',
+        message: 'ë¡œê·¸ì¸ ì„±ê³µ',
         user: {
           id: data.id,
           email: data.email,
@@ -52,6 +57,6 @@ export async function POST(request: NextRequest) {
     response.cookies.set(buildAdminCookie(token));
     return response;
   } catch (error) {
-    return jsonErrorResponse('¼­¹ö ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', requestId, { status: 500 });
+    return jsonErrorResponse('ì„œë²„ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', requestId, { status: 500 });
   }
 }

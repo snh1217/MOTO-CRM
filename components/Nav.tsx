@@ -1,4 +1,4 @@
-'use client';
+ï»¿'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -44,7 +44,7 @@ export default function Nav() {
     <header className="mb-5 flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm">
       <div>
         <h1 className="text-xl font-semibold">{strings.appName}</h1>
-        <p className="text-xs text-slate-500">¼¾ÅÍ ¿î¿µ ´ë½Ãº¸µå</p>
+        <p className="text-xs text-slate-500">ì„¼í„° ìš´ì˜ ëŒ€ì‹œë³´ë“œ</p>
       </div>
 
       <nav className="hidden items-center gap-3 md:flex">

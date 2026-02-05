@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+ï»¿import type { Metadata } from 'next';
 import { Noto_Sans_KR } from 'next/font/google';
 import './globals.css';
 
@@ -10,7 +10,7 @@ const notoSansKr = Noto_Sans_KR({
 
 export const metadata: Metadata = {
   title: 'MOTO-CRM',
-  description: '¿ÀÅä¹ÙÀÌ Á¢¼ö ¹× ¹®ÀÇ °ü¸® ½Ã½ºÅÛ'
+  description: 'ì˜¤í† ë°”ì´ ì ‘ìˆ˜ ë° ë¬¸ì˜ ê´€ë¦¬ ì‹œìŠ¤í…œ'
 };
 
 export default function RootLayout({
