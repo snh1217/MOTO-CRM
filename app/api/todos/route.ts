@@ -24,12 +24,6 @@ export async function GET(request: NextRequest) {
   }
 
   const supabaseServer = getSupabaseServer();
-  const { data: centerInfo } = await supabaseServer
-    .from('centers')
-    .select('name')
-    .eq('id', isAdmin.center_id)
-    .maybeSingle();
-  const centerName = centerInfo?.name ?? null;
   const { data, error } = await supabaseServer
     .from('todos')
     .select('date, items, updated_at')
@@ -75,6 +69,12 @@ export async function PUT(request: NextRequest) {
   }
 
   const supabaseServer = getSupabaseServer();
+  const { data: centerInfo } = await supabaseServer
+    .from('centers')
+    .select('name')
+    .eq('id', isAdmin.center_id)
+    .maybeSingle();
+  const centerName = centerInfo?.name ?? null;
   const { data, error } = await supabaseServer
     .from('todos')
     .upsert(
