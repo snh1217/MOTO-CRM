@@ -12,12 +12,21 @@ export async function GET(request: NextRequest) {
     return jsonErrorResponse('권한이 없습니다.', requestId, { status: 403 });
   }
 
+  const searchParams = request.nextUrl.searchParams;
+  const all = searchParams.get('all') === '1';
+  const centerId = searchParams.get('center_id');
+
   const supabaseServer = getSupabaseServer();
-  const { data, error } = await supabaseServer
+  let query = supabaseServer
     .from('admin_users')
     .select('id, email, username, center_id, is_active, is_superadmin, created_at, centers ( name, code )')
-    .eq('center_id', admin.center_id)
     .order('created_at', { ascending: false });
+
+  if (!all) {
+    query = query.eq('center_id', centerId || admin.center_id);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return jsonErrorResponse('사용자 조회에 실패했습니다.', requestId, { status: 500 }, serializeSupabaseError(error));

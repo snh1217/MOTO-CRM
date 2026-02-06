@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
@@ -35,16 +35,40 @@ export default function AdminUsersPage() {
   const [formPassword, setFormPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [centerFilter, setCenterFilter] = useState('');
 
-  const loadData = async () => {
+  const centerOptions = useMemo(() => centers, [centers]);
+
+  const loadMe = async () => {
+    try {
+      const response = await fetch('/api/admin/me', { credentials: 'include' });
+      if (!response.ok) {
+        return;
+      }
+      const result = await response.json().catch(() => ({}));
+      setIsSuperAdmin(Boolean(result.data?.is_superadmin));
+    } catch (err) {
+      setIsSuperAdmin(false);
+    }
+  };
+
+  const loadData = async (superAdminFlag: boolean) => {
     setLoading(true);
     setError(null);
     setRequestId(null);
 
     try {
       const [usersRes, centersRes] = await Promise.all([
-        fetch('/api/admin/users', { credentials: 'include' }),
-        fetch('/api/admin/centers', { credentials: 'include' })
+        fetch(
+          superAdminFlag
+            ? `/api/admin/users?all=1${centerFilter ? `&center_id=${centerFilter}` : ''}`
+            : '/api/admin/users',
+          { credentials: 'include' }
+        ),
+        fetch(superAdminFlag ? '/api/admin/centers/all' : '/api/admin/centers', {
+          credentials: 'include'
+        })
       ]);
 
       if (usersRes.status === 401 || centersRes.status === 401) {
@@ -82,8 +106,12 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => {
-    loadData();
+    loadMe();
   }, []);
+
+  useEffect(() => {
+    loadData(isSuperAdmin);
+  }, [isSuperAdmin, centerFilter]);
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -229,6 +257,26 @@ export default function AdminUsersPage() {
           <h2 className="text-lg font-semibold">{strings.adminUsers.title}</h2>
           <p className="text-sm text-slate-500">{strings.adminUsers.description}</p>
         </div>
+
+        {isSuperAdmin && (
+          <div className="mt-4 flex flex-col gap-2 md:flex-row md:items-center">
+            <label className="text-sm">
+              센터 필터
+              <select
+                className="ml-2 h-10 rounded-md border border-slate-200 px-3 text-sm"
+                value={centerFilter}
+                onChange={(event) => setCenterFilter(event.target.value)}
+              >
+                <option value="">전체 센터</option>
+                {centerOptions.map((center) => (
+                  <option key={center.id} value={center.id}>
+                    {center.name} ({center.code})
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
 
         <form onSubmit={handleCreate} className="mt-6 grid gap-3 md:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm">

@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server';
+﻿import type { NextRequest } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { phoneRegex, validateRequired } from '@/lib/validation';
 import { requireAdmin } from '@/lib/admin';
@@ -50,6 +50,16 @@ export async function POST(request: NextRequest) {
       return jsonErrorResponse('주행거리 값을 확인해 주세요.', requestId, { status: 400 });
     }
 
+    if ((vinImage || engineImage) && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return jsonErrorResponse(
+        '이미지 업로드 설정이 필요합니다. 관리자에게 문의해 주세요.',
+        requestId,
+        { status: 500 },
+        null,
+        'config'
+      );
+    }
+
     const supabaseServer = getSupabaseServer();
     const centerId = await resolveCenterId(request);
     if (!centerId) {
@@ -81,20 +91,14 @@ export async function POST(request: NextRequest) {
 
     if (engineImage) {
       const enginePath = `${crypto.randomUUID()}-${engineImage.name}`;
-      const engineUpload = await supabaseServer
-        .storage
-        .from(BUCKET)
-        .upload(enginePath, engineImage, {
-          contentType: engineImage.type
-        });
+      const engineUpload = await supabaseServer.storage.from(BUCKET).upload(enginePath, engineImage, {
+        contentType: engineImage.type
+      });
 
       if (engineUpload.error) {
-        console.error(
-          `[receipts][POST] requestId=${requestId} engine upload error`,
-          engineUpload.error
-        );
+        console.error(`[receipts][POST] requestId=${requestId} engine upload error`, engineUpload.error);
         return jsonErrorResponse(
-          '엔진 업로드 실패',
+          '엔진 사진 업로드 실패',
           requestId,
           { status: 500 },
           serializeSupabaseError(engineUpload.error),
@@ -165,7 +169,7 @@ export async function POST(request: NextRequest) {
 
     return jsonResponse(
       {
-        message: '접수가 등록되었습니다. 고객/차량 정보가 최신으로 갱신됩니다.',
+        message: '접수 등록이 완료되었습니다. 고객/차량 정보가 최신으로 갱신됩니다.',
         data
       },
       { status: 200 },

@@ -24,6 +24,12 @@ export async function GET(request: NextRequest) {
   }
 
   const supabaseServer = getSupabaseServer();
+  const { data: centerInfo } = await supabaseServer
+    .from('centers')
+    .select('name')
+    .eq('id', isAdmin.center_id)
+    .maybeSingle();
+  const centerName = centerInfo?.name ?? null;
   const { data, error } = await supabaseServer
     .from('todos')
     .select('date, items, updated_at')
@@ -76,7 +82,8 @@ export async function PUT(request: NextRequest) {
         center_id: isAdmin.center_id,
         date,
         items,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        center_name: centerName
       },
       { onConflict: 'center_id,date' }
     )

@@ -179,7 +179,7 @@ export default function AsReceiptForm() {
         body: payload
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
       setRequestId(result.requestId || null);
 
       if (!response.ok) {

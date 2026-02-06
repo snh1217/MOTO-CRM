@@ -15,7 +15,7 @@
     as: 'A/S',
     asRegister: 'A/S 접수',
     asHistory: 'A/S 내역',
-    forum: '센터게시판'
+    forum: '정비공유게시판'
   },
   login: {
     title: '센터 로그인',
@@ -47,8 +47,8 @@
     selectCenter: '센터 선택'
   },
   forum: {
-    title: '센터게시판',
-    description: '센터 내부 공지/잡담을 자유롭게 남기세요.',
+    title: '정비공유게시판',
+    description: '센터 내부 정비 노하우를 공유하세요.',
     placeholder: '내용을 입력하세요.',
     submit: '등록',
     submitting: '등록 중...'
