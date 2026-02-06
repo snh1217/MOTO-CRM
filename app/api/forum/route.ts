@@ -13,7 +13,7 @@ type ForumPostRow = {
   created_at: string;
   updated_at?: string | null;
   center_id: string;
-  centers?: { name: string } | null;
+  centers?: { name: string }[] | null;
 };
 
 export async function GET(request: NextRequest) {
@@ -72,9 +72,9 @@ export async function GET(request: NextRequest) {
     return acc;
   }, {});
 
-  const list = (posts as ForumPostRow[] | null)?.map((post) => ({
+  const list = (posts as unknown as ForumPostRow[] | null)?.map((post) => ({
     ...post,
-    center_name: post.centers?.name ?? '',
+    center_name: post.centers?.[0]?.name ?? '',
     media: mediaByPost[post.id] ?? [],
     comments: commentsByPost[post.id] ?? []
   })) ?? [];
