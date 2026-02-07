@@ -10,6 +10,8 @@ if (-not $env:VERCEL_TOKEN) {
   exit 1
 }
 
+$vercelVersion = "50.13.2"
+
 Push-Location (Split-Path $PSScriptRoot -Parent)
 try {
   # On Windows, `vercel build` can fail with "Unable to find lambda for route" even when
@@ -25,15 +27,15 @@ try {
       -v "moto-crm_vercel_node_modules:/app/node_modules" `
       -w /app `
       node:24-bullseye `
-      bash -lc 'npm ci && npx vercel pull --yes --environment=preview --token $VERCEL_TOKEN && npx vercel build --yes --token $VERCEL_TOKEN'
+      bash -lc "npm ci && npm i -g vercel@${vercelVersion} --no-audit --no-fund && vercel pull --yes --environment=preview --token $VERCEL_TOKEN && vercel build --yes --token $VERCEL_TOKEN"
     exit 0
   }
 
   # Pull project settings + envs into .vercel/ and .vercel/.env.*.local
-  npx vercel pull --yes --environment=preview --token $env:VERCEL_TOKEN
+  npx vercel@$vercelVersion pull --yes --environment=preview --token $env:VERCEL_TOKEN
 
   # Reproduce Vercel build output locally into .vercel/output
-  npx vercel build --yes --token $env:VERCEL_TOKEN
+  npx vercel@$vercelVersion build --yes --token $env:VERCEL_TOKEN
 
   Write-Host "`nVercel build completed. Output: .vercel/output" -ForegroundColor Cyan
 } finally {
