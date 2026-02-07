@@ -3,7 +3,7 @@ import { getSupabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin';
 import { phoneRegex, validateRequired } from '@/lib/validation';
 import { normalizeVehicleNumber } from '@/lib/normalizeVehicleNumber';
-import { getStoragePathFromUrl } from '@/lib/storagePath';
+import { getStorageInfoFromUrl, getStoragePathFromUrl } from '@/lib/storagePath';
 import {
   createRequestId,
   jsonErrorResponse,
@@ -11,7 +11,7 @@ import {
   serializeSupabaseError
 } from '@/lib/apiUtils';
 
-const BUCKET = process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'vin-engine';
+const LEGACY_BUCKET = process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'vin-engine';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const requestId = createRequestId();
@@ -102,24 +102,29 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     let engineUrl = existing.engine_image_url as string | null;
 
     if (deleteVin) {
-      const vinPath = getStoragePathFromUrl(vinUrl, BUCKET);
+      const info = getStorageInfoFromUrl(vinUrl);
+      const vinPath = info?.path ?? getStoragePathFromUrl(vinUrl, LEGACY_BUCKET);
+      const bucket = info?.bucket ?? LEGACY_BUCKET;
       if (vinPath) {
-        await supabaseServer.storage.from(BUCKET).remove([vinPath]);
+        await supabaseServer.storage.from(bucket).remove([vinPath]);
       }
       vinUrl = null;
     }
 
     if (deleteEngine) {
-      const enginePath = getStoragePathFromUrl(engineUrl, BUCKET);
+      const info = getStorageInfoFromUrl(engineUrl);
+      const enginePath = info?.path ?? getStoragePathFromUrl(engineUrl, LEGACY_BUCKET);
+      const bucket = info?.bucket ?? LEGACY_BUCKET;
       if (enginePath) {
-        await supabaseServer.storage.from(BUCKET).remove([enginePath]);
+        await supabaseServer.storage.from(bucket).remove([enginePath]);
       }
       engineUrl = null;
     }
 
     if (vinImage) {
       const vinPath = `as/vin/${crypto.randomUUID()}-${vinImage.name}`;
-      const vinUpload = await supabaseServer.storage.from(BUCKET).upload(vinPath, vinImage, {
+      const vinBucket = process.env.SUPABASE_VIN_BUCKET ?? process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'vincode';
+      const vinUpload = await supabaseServer.storage.from(vinBucket).upload(vinPath, vinImage, {
         contentType: vinImage.type
       });
 
@@ -134,17 +139,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         );
       }
 
-      vinUrl = supabaseServer.storage.from(BUCKET).getPublicUrl(vinPath).data.publicUrl;
+      vinUrl = supabaseServer.storage.from(vinBucket).getPublicUrl(vinPath).data.publicUrl;
     }
 
     if (engineImage) {
       const enginePath = `as/engine/${crypto.randomUUID()}-${engineImage.name}`;
-      const engineUpload = await supabaseServer
-        .storage
-        .from(BUCKET)
-        .upload(enginePath, engineImage, {
-          contentType: engineImage.type
-        });
+      const engineBucket = process.env.SUPABASE_ENGINE_BUCKET ?? process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'enginecode';
+      const engineUpload = await supabaseServer.storage.from(engineBucket).upload(enginePath, engineImage, {
+        contentType: engineImage.type
+      });
 
       if (engineUpload.error) {
         console.error(`[as][PATCH] requestId=${requestId} engine upload error`, engineUpload.error);
@@ -157,7 +160,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         );
       }
 
-      engineUrl = supabaseServer.storage.from(BUCKET).getPublicUrl(enginePath).data.publicUrl;
+      engineUrl = supabaseServer.storage.from(engineBucket).getPublicUrl(enginePath).data.publicUrl;
     }
 
     const { data: updated, error } = await supabaseServer

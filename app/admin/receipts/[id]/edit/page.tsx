@@ -15,7 +15,7 @@ import {
   ZT_TYPES
 } from '@/lib/models';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
-import { getStoragePathFromUrl } from '@/lib/storagePath';
+import { getStorageInfoFromUrl } from '@/lib/storagePath';
 
 interface Receipt {
   id: string;
@@ -33,8 +33,6 @@ interface Receipt {
 }
 
 type SubmitStage = 'idle' | 'vin' | 'engine' | 'db' | 'done' | 'error';
-
-const BUCKET = 'vin-engine';
 
 export default function ReceiptEditPage() {
   const params = useParams<{ id: string }>();
@@ -192,11 +190,11 @@ export default function ReceiptEditPage() {
 
   const fetchSignedUrl = async (rawUrl: string | null) => {
     if (!rawUrl) return null;
-    const path = getStoragePathFromUrl(rawUrl, BUCKET);
-    if (!path) return rawUrl;
+    const info = getStorageInfoFromUrl(rawUrl);
+    if (!info) return rawUrl;
     const response = await fetch(
-      `/api/storage/signed-url?bucket=${encodeURIComponent(BUCKET)}&path=${encodeURIComponent(
-        path
+      `/api/storage/signed-url?bucket=${encodeURIComponent(info.bucket)}&path=${encodeURIComponent(
+        info.path
       )}&expiresIn=180`
     );
     const result = await response.json();

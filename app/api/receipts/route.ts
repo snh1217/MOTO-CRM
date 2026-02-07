@@ -11,7 +11,8 @@ import {
   serializeSupabaseError
 } from '@/lib/apiUtils';
 
-const BUCKET = process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'vin-engine';
+const VIN_BUCKET = process.env.SUPABASE_VIN_BUCKET ?? process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'vincode';
+const ENGINE_BUCKET = process.env.SUPABASE_ENGINE_BUCKET ?? process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'enginecode';
 
 export async function POST(request: NextRequest) {
   const requestId = createRequestId();
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     if (vinImage) {
       const vinPath = `${crypto.randomUUID()}-${vinImage.name}`;
-      const vinUpload = await supabaseServer.storage.from(BUCKET).upload(vinPath, vinImage, {
+      const vinUpload = await supabaseServer.storage.from(VIN_BUCKET).upload(vinPath, vinImage, {
         contentType: vinImage.type
       });
 
@@ -86,12 +87,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      vinUrl = supabaseServer.storage.from(BUCKET).getPublicUrl(vinPath).data.publicUrl;
+      vinUrl = supabaseServer.storage.from(VIN_BUCKET).getPublicUrl(vinPath).data.publicUrl;
     }
 
     if (engineImage) {
       const enginePath = `${crypto.randomUUID()}-${engineImage.name}`;
-      const engineUpload = await supabaseServer.storage.from(BUCKET).upload(enginePath, engineImage, {
+      const engineUpload = await supabaseServer.storage.from(ENGINE_BUCKET).upload(enginePath, engineImage, {
         contentType: engineImage.type
       });
 
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      engineUrl = supabaseServer.storage.from(BUCKET).getPublicUrl(enginePath).data.publicUrl;
+      engineUrl = supabaseServer.storage.from(ENGINE_BUCKET).getPublicUrl(enginePath).data.publicUrl;
     }
 
     const vehicleNumberNorm = normalizeVehicleNumber(vehicleNumber);

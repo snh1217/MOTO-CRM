@@ -1,9 +1,9 @@
-import type { NextRequest } from 'next/server';
+﻿import type { NextRequest } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin';
 import { phoneRegex, validateRequired } from '@/lib/validation';
 import { normalizeVehicleNumber } from '@/lib/normalizeVehicleNumber';
-import { getStoragePathFromUrl } from '@/lib/storagePath';
+import { getStorageInfoFromUrl, getStoragePathFromUrl } from '@/lib/storagePath';
 import {
   createRequestId,
   jsonErrorResponse,
@@ -11,14 +11,14 @@ import {
   serializeSupabaseError
 } from '@/lib/apiUtils';
 
-const BUCKET = process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'vin-engine';
+const LEGACY_BUCKET = process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'vin-engine';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const requestId = createRequestId();
   console.log(`[receipts][GET:ID] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
+    return jsonErrorResponse('?몄쬆 ?꾩슂', requestId, { status: 401 });
   }
 
   const supabaseServer = getSupabaseServer();
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   if (error) {
     console.error(`[receipts][GET:ID] requestId=${requestId} error`, error);
-    return jsonErrorResponse('조회 실패', requestId, { status: 500 }, serializeSupabaseError(error));
+    return jsonErrorResponse('議고쉶 ?ㅽ뙣', requestId, { status: 500 }, serializeSupabaseError(error));
   }
 
   return jsonResponse({ data }, { status: 200 }, requestId);
@@ -42,7 +42,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   console.log(`[receipts][PATCH] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
+    return jsonErrorResponse('?몄쬆 ?꾩슂', requestId, { status: 401 });
   }
 
   try {
@@ -57,7 +57,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (existingError || !existing) {
       console.error(`[receipts][PATCH] requestId=${requestId} fetch error`, existingError);
       return jsonErrorResponse(
-        '기존 접수 정보를 불러오지 못했습니다.',
+        '湲곗〈 ?묒닔 ?뺣낫瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲??',
         requestId,
         { status: 500 },
         serializeSupabaseError(existingError)
@@ -86,47 +86,52 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     });
 
     if (missing.length > 0) {
-      return jsonErrorResponse(`필수 값 누락: ${missing.join(', ')}`, requestId, { status: 400 });
+      return jsonErrorResponse(`?꾩닔 媛??꾨씫: ${missing.join(', ')}`, requestId, { status: 400 });
     }
 
     if (phone && !phoneRegex.test(phone)) {
-      return jsonErrorResponse('전화번호 형식이 올바르지 않습니다.', requestId, { status: 400 });
+      return jsonErrorResponse('?꾪솕踰덊샇 ?뺤떇???щ컮瑜댁? ?딆뒿?덈떎.', requestId, { status: 400 });
     }
 
     const mileageKm = Number(mileageRaw);
     if (Number.isNaN(mileageKm) || mileageKm < 0) {
-      return jsonErrorResponse('주행거리 값을 확인해 주세요.', requestId, { status: 400 });
+      return jsonErrorResponse('二쇳뻾嫄곕━ 媛믪쓣 ?뺤씤??二쇱꽭??', requestId, { status: 400 });
     }
 
     let vinUrl = existing.vin_image_url as string | null;
     let engineUrl = existing.engine_image_url as string | null;
 
     if (deleteVin) {
-      const vinPath = getStoragePathFromUrl(vinUrl, BUCKET);
+      const info = getStorageInfoFromUrl(vinUrl);
+      const vinPath = info?.path ?? getStoragePathFromUrl(vinUrl, LEGACY_BUCKET);
+      const bucket = info?.bucket ?? LEGACY_BUCKET;
       if (vinPath) {
-        await supabaseServer.storage.from(BUCKET).remove([vinPath]);
+        await supabaseServer.storage.from(bucket).remove([vinPath]);
       }
       vinUrl = null;
     }
 
     if (deleteEngine) {
-      const enginePath = getStoragePathFromUrl(engineUrl, BUCKET);
+      const info = getStorageInfoFromUrl(engineUrl);
+      const enginePath = info?.path ?? getStoragePathFromUrl(engineUrl, LEGACY_BUCKET);
+      const bucket = info?.bucket ?? LEGACY_BUCKET;
       if (enginePath) {
-        await supabaseServer.storage.from(BUCKET).remove([enginePath]);
+        await supabaseServer.storage.from(bucket).remove([enginePath]);
       }
       engineUrl = null;
     }
 
     if (vinImage) {
       const vinPath = `${crypto.randomUUID()}-${vinImage.name}`;
-      const vinUpload = await supabaseServer.storage.from(BUCKET).upload(vinPath, vinImage, {
+      const vinBucket = process.env.SUPABASE_VIN_BUCKET ?? process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'vincode';
+      const vinUpload = await supabaseServer.storage.from(vinBucket).upload(vinPath, vinImage, {
         contentType: vinImage.type
       });
 
       if (vinUpload.error) {
         console.error(`[receipts][PATCH] requestId=${requestId} vin upload error`, vinUpload.error);
         return jsonErrorResponse(
-          'VIN 업로드 실패',
+          'VIN ?낅줈???ㅽ뙣',
           requestId,
           { status: 500 },
           serializeSupabaseError(vinUpload.error),
@@ -134,17 +139,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         );
       }
 
-      vinUrl = supabaseServer.storage.from(BUCKET).getPublicUrl(vinPath).data.publicUrl;
+      vinUrl = supabaseServer.storage.from(vinBucket).getPublicUrl(vinPath).data.publicUrl;
     }
 
     if (engineImage) {
       const enginePath = `${crypto.randomUUID()}-${engineImage.name}`;
-      const engineUpload = await supabaseServer
-        .storage
-        .from(BUCKET)
-        .upload(enginePath, engineImage, {
-          contentType: engineImage.type
-        });
+      const engineBucket = process.env.SUPABASE_ENGINE_BUCKET ?? process.env.SUPABASE_VIN_ENGINE_BUCKET ?? 'enginecode';
+      const engineUpload = await supabaseServer.storage.from(engineBucket).upload(enginePath, engineImage, {
+        contentType: engineImage.type
+      });
 
       if (engineUpload.error) {
         console.error(
@@ -152,7 +155,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           engineUpload.error
         );
         return jsonErrorResponse(
-          '엔진 업로드 실패',
+          '?붿쭊 ?낅줈???ㅽ뙣',
           requestId,
           { status: 500 },
           serializeSupabaseError(engineUpload.error),
@@ -160,7 +163,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         );
       }
 
-      engineUrl = supabaseServer.storage.from(BUCKET).getPublicUrl(enginePath).data.publicUrl;
+      engineUrl = supabaseServer.storage.from(engineBucket).getPublicUrl(enginePath).data.publicUrl;
     }
 
     const { data: updated, error } = await supabaseServer
@@ -185,7 +188,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (error) {
       console.error(`[receipts][PATCH] requestId=${requestId} db update error`, error);
       return jsonErrorResponse(
-        '수정 저장 실패',
+        '?섏젙 ????ㅽ뙣',
         requestId,
         { status: 500 },
         serializeSupabaseError(error),
@@ -213,7 +216,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (profileError) {
       console.error(`[receipts][PATCH] requestId=${requestId} profile upsert error`, profileError);
       return jsonErrorResponse(
-        '프로필 최신화 실패',
+        '?꾨줈??理쒖떊???ㅽ뙣',
         requestId,
         { status: 500 },
         serializeSupabaseError(profileError),
@@ -223,7 +226,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     return jsonResponse(
       {
-        message: '수정이 완료되었습니다.',
+        message: '?섏젙???꾨즺?섏뿀?듬땲??',
         data: updated
       },
       { status: 200 },
@@ -231,7 +234,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     );
   } catch (error) {
     console.error(`[receipts][PATCH] requestId=${requestId} unexpected error`, error);
-    return jsonErrorResponse('서버 오류가 발생했습니다.', requestId, { status: 500 });
+    return jsonErrorResponse('?쒕쾭 ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', requestId, { status: 500 });
   }
 }
 
@@ -240,7 +243,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   console.log(`[receipts][DELETE] requestId=${requestId}`);
   const isAdmin = await requireAdmin(request);
   if (!isAdmin) {
-    return jsonErrorResponse('인증 필요', requestId, { status: 401 });
+    return jsonErrorResponse('?몄쬆 ?꾩슂', requestId, { status: 401 });
   }
 
   const supabaseServer = getSupabaseServer();
@@ -254,32 +257,42 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   if (fetchError || !existing) {
     console.error(`[receipts][DELETE] requestId=${requestId} fetch error`, fetchError);
     return jsonErrorResponse(
-      '삭제할 접수를 찾을 수 없습니다.',
+      '??젣???묒닔瑜?李얠쓣 ???놁뒿?덈떎.',
       requestId,
       { status: 404 },
       serializeSupabaseError(fetchError)
     );
   }
 
-  const paths: string[] = [];
-  const vinPath = getStoragePathFromUrl(existing.vin_image_url, BUCKET);
-  const enginePath = getStoragePathFromUrl(existing.engine_image_url, BUCKET);
-  if (vinPath) paths.push(vinPath);
-  if (enginePath) paths.push(enginePath);
+  const removals = [existing.vin_image_url, existing.engine_image_url]
+    .map((url) => {
+      const info = getStorageInfoFromUrl(url);
+      if (info) return info;
+      const path = getStoragePathFromUrl(url, LEGACY_BUCKET);
+      return path ? { bucket: LEGACY_BUCKET, path } : null;
+    })
+    .filter((item): item is { bucket: string; path: string } => Boolean(item?.bucket && item?.path));
 
-  if (paths.length > 0) {
-    const { error: storageError } = await supabaseServer.storage.from(BUCKET).remove(paths);
-    if (storageError) {
-      console.error(`[receipts][DELETE] requestId=${requestId} storage error`, storageError);
-      return jsonErrorResponse(
-        '스토리지 파일 삭제 실패',
-        requestId,
-        { status: 500 },
-        serializeSupabaseError(storageError)
-      );
+  if (removals.length > 0) {
+    const byBucket = removals.reduce<Record<string, string[]>>((acc, item) => {
+      acc[item.bucket] = acc[item.bucket] ?? [];
+      acc[item.bucket].push(item.path);
+      return acc;
+    }, {});
+
+    for (const [bucket, paths] of Object.entries(byBucket)) {
+      const { error: storageError } = await supabaseServer.storage.from(bucket).remove(paths);
+      if (storageError) {
+        console.error(`[receipts][DELETE] requestId=${requestId} storage error`, storageError);
+        return jsonErrorResponse(
+          '?ㅽ넗由ъ? ?뚯씪 ??젣 ?ㅽ뙣',
+          requestId,
+          { status: 500 },
+          serializeSupabaseError(storageError)
+        );
+      }
     }
   }
-
   const { error: deleteError } = await supabaseServer
     .from('receipts')
     .delete()
@@ -288,8 +301,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
   if (deleteError) {
     console.error(`[receipts][DELETE] requestId=${requestId} delete error`, deleteError);
-    return jsonErrorResponse('삭제 실패', requestId, { status: 500 }, serializeSupabaseError(deleteError));
+    return jsonErrorResponse('??젣 ?ㅽ뙣', requestId, { status: 500 }, serializeSupabaseError(deleteError));
   }
 
-  return jsonResponse({ message: '삭제 완료', id: params.id }, { status: 200 }, requestId);
+  return jsonResponse({ message: '??젣 ?꾨즺', id: params.id }, { status: 200 }, requestId);
 }

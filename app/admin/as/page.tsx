@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
-import { getStoragePathFromUrl } from '@/lib/storagePath';
+import { getStorageInfoFromUrl } from '@/lib/storagePath';
 
 interface AsReceipt {
   id: string;
@@ -20,8 +20,6 @@ interface AsReceipt {
   symptom: string | null;
   service_detail: string | null;
 }
-
-const BUCKET = 'vin-engine';
 
 export default function AsAdminPage() {
   const [receipts, setReceipts] = useState<AsReceipt[]>([]);
@@ -72,11 +70,11 @@ export default function AsAdminPage() {
 
     try {
       let finalUrl = rawUrl;
-      const path = getStoragePathFromUrl(rawUrl, BUCKET);
-      if (path) {
+      const info = getStorageInfoFromUrl(rawUrl);
+      if (info) {
         const response = await fetch(
-          `/api/storage/signed-url?bucket=${encodeURIComponent(BUCKET)}&path=${encodeURIComponent(
-            path
+          `/api/storage/signed-url?bucket=${encodeURIComponent(info.bucket)}&path=${encodeURIComponent(
+            info.path
           )}&expiresIn=180`
         );
         const result = await response.json();
