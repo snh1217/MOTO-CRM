@@ -310,11 +310,14 @@ export default function AsAdminPage() {
               <p className="text-sm text-slate-500">이미지 불러오는 중...</p>
             ) : (
               <div className="max-h-[80vh] overflow-auto">
-                <img
-                  src={modalImage.url}
-                  alt={modalImage.title}
-                  className="mx-auto max-h-[75vh] w-auto max-w-full"
-                />
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={modalImage.url}
+                    alt={modalImage.title}
+                    className="mx-auto max-h-[75vh] w-auto max-w-full"
+                  />
+                </>
               </div>
             )}
             {modalError && (

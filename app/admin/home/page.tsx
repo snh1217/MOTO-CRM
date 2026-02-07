@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 import { strings } from '@/lib/strings.ko';
@@ -75,7 +75,7 @@ export default function AdminHomePage() {
     fetchMe();
   }, []);
 
-  const fetchTodos = async (dateKey: string, setter: Dispatch<SetStateAction<TodoState>>) => {
+  const fetchTodos = useCallback(async (dateKey: string, setter: Dispatch<SetStateAction<TodoState>>) => {
     setter({ items: [], loading: true, saving: false, error: null, requestId: null });
 
     try {
@@ -115,15 +115,15 @@ export default function AdminHomePage() {
         requestId: null
       });
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     fetchTodos(todayKey, setToday);
-  }, [todayKey]);
+  }, [fetchTodos, todayKey]);
 
   useEffect(() => {
     fetchTodos(tomorrowKey, setTomorrow);
-  }, [tomorrowKey]);
+  }, [fetchTodos, tomorrowKey]);
 
   const saveTodos = async (
     dateKey: string,

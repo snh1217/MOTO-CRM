@@ -1,7 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 
-const DEFAULT_CENTER_CODE = process.env.DEFAULT_CENTER_CODE ?? 'default';
+const DEFAULT_CENTER_CODE = (process.env.DEFAULT_CENTER_CODE ?? '').trim();
+const FALLBACK_DEFAULT_CENTER_CODE = 'default';
 
 export async function getCenterIdByCode(code: string) {
   const supabaseServer = getSupabaseServer();
@@ -35,8 +36,24 @@ export async function resolveCenterId(request: NextRequest, adminCenterId?: stri
     if (byDefault) return byDefault;
   }
 
-  // 최후 폴백: 센터가 1개뿐인 경우 첫 센터를 사용
+  // If only one non-default center exists, prefer it over the placeholder 'default' center.
   const supabaseServer = getSupabaseServer();
+  const { data: centers } = await supabaseServer
+    .from('centers')
+    .select('id, code')
+    .order('created_at', { ascending: true });
+
+  const list = Array.isArray(centers) ? centers : [];
+  const nonDefault = list.filter((center) => String(center.code) !== FALLBACK_DEFAULT_CENTER_CODE);
+  if (nonDefault.length === 1) {
+    return String(nonDefault[0].id);
+  }
+
+  // Otherwise use configured fallback default center code if present.
+  const byFallbackDefault = await getCenterIdByCode(FALLBACK_DEFAULT_CENTER_CODE);
+  if (byFallbackDefault) return byFallbackDefault;
+
+  // 최후 폴백: 센터가 1개뿐인 경우 첫 센터를 사용
   const { data } = await supabaseServer
     .from('centers')
     .select('id')

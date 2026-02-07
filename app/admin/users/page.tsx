@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
@@ -40,7 +40,7 @@ export default function AdminUsersPage() {
 
   const centerOptions = useMemo(() => centers, [centers]);
 
-  const loadMe = async () => {
+  const loadMe = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/me', { credentials: 'include' });
       if (!response.ok) {
@@ -51,9 +51,9 @@ export default function AdminUsersPage() {
     } catch (err) {
       setIsSuperAdmin(false);
     }
-  };
+  }, []);
 
-  const loadData = async (superAdminFlag: boolean) => {
+  const loadData = useCallback(async (superAdminFlag: boolean) => {
     setLoading(true);
     setError(null);
     setRequestId(null);
@@ -103,15 +103,15 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router, centerFilter]);
 
   useEffect(() => {
     loadMe();
-  }, []);
+  }, [loadMe]);
 
   useEffect(() => {
     loadData(isSuperAdmin);
-  }, [isSuperAdmin, centerFilter]);
+  }, [isSuperAdmin, loadData]);
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

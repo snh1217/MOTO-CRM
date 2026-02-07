@@ -69,35 +69,25 @@ export default function ReceiptForm() {
   }, []);
 
   useEffect(() => {
-    if (vinPreviewUrl) {
-      URL.revokeObjectURL(vinPreviewUrl);
-    }
-    if (vinImage) {
-      setVinPreviewUrl(URL.createObjectURL(vinImage));
-    } else {
+    if (!vinImage) {
       setVinPreviewUrl(null);
+      return;
     }
-    return () => {
-      if (vinPreviewUrl) {
-        URL.revokeObjectURL(vinPreviewUrl);
-      }
-    };
+
+    const url = URL.createObjectURL(vinImage);
+    setVinPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
   }, [vinImage]);
 
   useEffect(() => {
-    if (enginePreviewUrl) {
-      URL.revokeObjectURL(enginePreviewUrl);
-    }
-    if (engineImage) {
-      setEnginePreviewUrl(URL.createObjectURL(engineImage));
-    } else {
+    if (!engineImage) {
       setEnginePreviewUrl(null);
+      return;
     }
-    return () => {
-      if (enginePreviewUrl) {
-        URL.revokeObjectURL(enginePreviewUrl);
-      }
-    };
+
+    const url = URL.createObjectURL(engineImage);
+    setEnginePreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
   }, [engineImage]);
 
   const addLog = (stage: string, messageText: string) => {
@@ -504,7 +494,14 @@ export default function ReceiptForm() {
                 className="text-xs"
               />
               {vinPreviewUrl && (
-                <img src={vinPreviewUrl} alt="VIN preview" className="h-24 w-full rounded-md object-cover" />
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={vinPreviewUrl}
+                    alt="VIN preview"
+                    className="h-24 w-full rounded-md object-cover"
+                  />
+                </>
               )}
               {vinImage && (
                 <button
@@ -532,11 +529,14 @@ export default function ReceiptForm() {
                 className="text-xs"
               />
               {enginePreviewUrl && (
-                <img
-                  src={enginePreviewUrl}
-                  alt="Engine preview"
-                  className="h-24 w-full rounded-md object-cover"
-                />
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={enginePreviewUrl}
+                    alt="Engine preview"
+                    className="h-24 w-full rounded-md object-cover"
+                  />
+                </>
               )}
               {engineImage && (
                 <button

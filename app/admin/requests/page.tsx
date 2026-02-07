@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
@@ -34,7 +34,7 @@ export default function AdminRequestsPage() {
 
   const centerOptions = useMemo(() => centers, [centers]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     setRequestId(null);
@@ -77,11 +77,11 @@ export default function AdminRequestsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const handleAction = async (id: string, action: 'approve' | 'reject') => {
     setSavingId(id);

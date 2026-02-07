@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
@@ -117,7 +117,7 @@ export default function InquiriesAdminPage() {
   const router = useRouter();
   const [debugMode, setDebugMode] = useState(false);
 
-  const fetchInquiries = async () => {
+  const fetchInquiries = useCallback(async () => {
     setLoading(true);
     setLoadingSlow(false);
     if (listSlowTimerRef.current) {
@@ -162,7 +162,7 @@ export default function InquiriesAdminPage() {
       }
       setLoading(false);
     }
-  };
+  }, [debugMode, router]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -173,7 +173,7 @@ export default function InquiriesAdminPage() {
 
   useEffect(() => {
     fetchInquiries();
-  }, [debugMode]);
+  }, [fetchInquiries]);
 
   useEffect(() => {
     if (!selectedDetail) return;
@@ -182,7 +182,7 @@ export default function InquiriesAdminPage() {
     setNoteSuccess(null);
     setNoteRequestId(null);
     setNoteRetry(false);
-  }, [selectedDetail?.id]);
+  }, [selectedDetail]);
 
   const filteredInquiries = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();

@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
@@ -64,7 +64,7 @@ export default function ForumPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const loadPosts = async () => {
+  const loadPosts = useCallback(async () => {
     setLoading(true);
     setError(null);
     setRequestId(null);
@@ -87,9 +87,9 @@ export default function ForumPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
-  const loadMe = async () => {
+  const loadMe = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/me', { credentials: 'include' });
       if (!response.ok) return;
@@ -98,9 +98,9 @@ export default function ForumPage() {
     } catch (err) {
       setMe(null);
     }
-  };
+  }, []);
 
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     try {
       const response = await fetch('/api/forum/notifications', { credentials: 'include' });
       if (!response.ok) return;
@@ -110,13 +110,13 @@ export default function ForumPage() {
     } catch (err) {
       // ignore
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadMe();
     loadPosts();
     loadNotifications();
-  }, []);
+  }, [loadMe, loadNotifications, loadPosts]);
 
   const handleSubmit = async () => {
     const trimmed = content.trim();
@@ -394,7 +394,10 @@ export default function ForumPage() {
                           <source src={media.url} />
                         </video>
                       ) : (
-                        <img src={media.url} alt="media" className="w-full rounded-md object-cover" />
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={media.url} alt="media" className="w-full rounded-md object-cover" />
+                        </>
                       )}
                     </div>
                   ))}
