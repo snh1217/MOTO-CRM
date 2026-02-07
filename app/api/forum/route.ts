@@ -3,7 +3,7 @@ import { createRequestId, jsonErrorResponse, jsonResponse, serializeSupabaseErro
 import { getSupabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin';
 
-const BUCKET = process.env.SUPABASE_FORUM_BUCKET ?? 'vin-engine';
+const BUCKET = process.env.SUPABASE_FORUM_BUCKET ?? 'forum-media';
 const MAX_MEDIA_BYTES = 2_200_000;
 
 type ForumPostRow = {

@@ -3,7 +3,7 @@ import { createRequestId, jsonErrorResponse, jsonResponse, serializeSupabaseErro
 import { getSupabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin';
 
-const BUCKET = process.env.SUPABASE_FORUM_BUCKET ?? 'vin-engine';
+const BUCKET = process.env.SUPABASE_FORUM_BUCKET ?? 'forum-media';
 
 export async function PATCH(request: NextRequest, context: { params: { id: string } }) {
   const requestId = createRequestId();
