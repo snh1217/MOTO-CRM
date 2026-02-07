@@ -6,6 +6,11 @@ import Nav from '@/components/Nav';
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 import { strings } from '@/lib/strings.ko';
 
+const MAX_IMAGE_BYTES = 1_800_000; // Keep total multipart body under common serverless limits.
+const MAX_TOTAL_BYTES = 3_500_000;
+const MAX_IMAGE_DIMENSION = 1600;
+const JPEG_QUALITIES = [0.82, 0.72, 0.62, 0.52];
+
 type ForumMedia = {
   id: string;
   url: string;
@@ -118,6 +123,111 @@ export default function ForumPage() {
     loadNotifications();
   }, [loadMe, loadNotifications, loadPosts]);
 
+  const formatBytes = (value: number) => {
+    if (!Number.isFinite(value)) return '-';
+    if (value < 1024) return `${value} B`;
+    if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+    return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const compressImageFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      throw new Error('이미지 파일만 업로드할 수 있습니다.');
+    }
+
+    if (
+      file.size <= MAX_IMAGE_BYTES &&
+      (file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp')
+    ) {
+      return file;
+    }
+
+    let bitmap: ImageBitmap;
+    try {
+      bitmap = await createImageBitmap(file);
+    } catch {
+      throw new Error('지원되지 않는 이미지 형식입니다. JPG/PNG로 다시 시도해 주세요.');
+    }
+
+    try {
+      const srcW = bitmap.width;
+      const srcH = bitmap.height;
+      const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(srcW, srcH));
+      const dstW = Math.max(1, Math.round(srcW * scale));
+      const dstH = Math.max(1, Math.round(srcH * scale));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = dstW;
+      canvas.height = dstH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('이미지 처리에 실패했습니다.');
+      ctx.drawImage(bitmap, 0, 0, dstW, dstH);
+
+      const toBlob = (quality: number) =>
+        new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) reject(new Error('이미지 변환에 실패했습니다.'));
+              else resolve(blob);
+            },
+            'image/jpeg',
+            quality
+          );
+        });
+
+      let blob = await toBlob(JPEG_QUALITIES[0]);
+      for (const q of JPEG_QUALITIES) {
+        blob = await toBlob(q);
+        if (blob.size <= MAX_IMAGE_BYTES) break;
+      }
+
+      if (blob.size > MAX_IMAGE_BYTES) {
+        const scale2 = Math.min(1, 1200 / Math.max(srcW, srcH));
+        const w2 = Math.max(1, Math.round(srcW * scale2));
+        const h2 = Math.max(1, Math.round(srcH * scale2));
+        canvas.width = w2;
+        canvas.height = h2;
+        ctx.drawImage(bitmap, 0, 0, w2, h2);
+        for (const q of [0.72, 0.62, 0.52]) {
+          blob = await toBlob(q);
+          if (blob.size <= MAX_IMAGE_BYTES) break;
+        }
+      }
+
+      if (blob.size > MAX_IMAGE_BYTES) {
+        throw new Error('이미지 용량이 너무 큽니다. 더 작은 사진으로 다시 시도해 주세요.');
+      }
+
+      const safeName = (file.name || 'photo')
+        .replace(/\.[^./\\]+$/g, '')
+        .replace(/[^\w.-]+/g, '_')
+        .slice(0, 80);
+      return new File([blob], `${safeName}.jpg`, { type: 'image/jpeg' });
+    } finally {
+      bitmap.close();
+    }
+  };
+
+  const prepareMediaFiles = async (picked: File[]) => {
+    const prepared: File[] = [];
+    for (const file of picked) {
+      if (!file) continue;
+      if (file.type.startsWith('video/')) {
+        throw new Error('동영상 업로드는 용량 제한으로 현재 지원하지 않습니다. 사진만 첨부해 주세요.');
+      }
+      if (!file.type.startsWith('image/')) {
+        throw new Error('이미지 파일만 업로드할 수 있습니다.');
+      }
+      const next = await compressImageFile(file);
+      prepared.push(next);
+    }
+    const totalBytes = prepared.reduce((sum, f) => sum + (f.size || 0), 0);
+    if (totalBytes > MAX_TOTAL_BYTES) {
+      throw new Error(`첨부파일 용량이 너무 큽니다. (총 ${formatBytes(totalBytes)})`);
+    }
+    return prepared;
+  };
+
   const handleSubmit = async () => {
     const trimmed = content.trim();
     if (!trimmed) return;
@@ -127,6 +237,12 @@ export default function ForumPage() {
     setRequestId(null);
 
     try {
+      const totalBytes = files.reduce((sum, f) => sum + (f.size || 0), 0);
+      if (totalBytes > MAX_TOTAL_BYTES) {
+        setError(`첨부파일 용량이 너무 큽니다. (총 ${formatBytes(totalBytes)})`);
+        return;
+      }
+
       const payload = new FormData();
       payload.append('content', trimmed);
       files.forEach((file) => payload.append('media', file));
@@ -140,10 +256,21 @@ export default function ForumPage() {
         },
         20000
       );
-      const result = await response.json().catch(() => ({}));
+      const rawText = await response.text().catch(() => '');
+      const result = (() => {
+        try {
+          return rawText ? JSON.parse(rawText) : {};
+        } catch {
+          return {};
+        }
+      })();
       if (!response.ok) {
-        setError(result.error || result.message || '게시글 저장에 실패했습니다.');
-        setRequestId(result.requestId || null);
+        if (response.status === 413) {
+          setError('사진 용량이 너무 커서 업로드할 수 없습니다. 더 작은 사진으로 다시 시도해 주세요.');
+        } else {
+          setError((result as any).error || (result as any).message || '게시글 저장에 실패했습니다.');
+        }
+        setRequestId((result as any).requestId || null);
         return;
       }
       setPosts((prev) => [result.data, ...prev]);
@@ -314,15 +441,40 @@ export default function ForumPage() {
             type="file"
             multiple
             accept="image/*,video/*"
-            onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
+            onChange={(event) => {
+              const picked = Array.from(event.target.files ?? []);
+              setError(null);
+              setRequestId(null);
+              void (async () => {
+                try {
+                  const prepared = await prepareMediaFiles(picked);
+                  setFiles(prepared);
+                } catch (err) {
+                  setFiles([]);
+                  setError(err instanceof Error ? err.message : '미디어 처리에 실패했습니다.');
+                } finally {
+                  // Allow re-selecting the same file.
+                  event.target.value = '';
+                }
+              })();
+            }}
             className="text-sm"
           />
           {files.length > 0 && (
             <ul className="text-xs text-slate-500">
               {files.map((file) => (
-                <li key={file.name}>{file.name}</li>
+                <li key={`${file.name}-${file.size}`}>{file.name} ({formatBytes(file.size)})</li>
               ))}
             </ul>
+          )}
+          {files.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setFiles([])}
+              className="self-start rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600"
+            >
+              첨부 초기화
+            </button>
           )}
           <button
             type="button"

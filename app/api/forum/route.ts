@@ -4,6 +4,7 @@ import { getSupabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/admin';
 
 const BUCKET = process.env.SUPABASE_FORUM_BUCKET ?? 'vin-engine';
+const MAX_MEDIA_BYTES = 2_200_000;
 
 type ForumPostRow = {
   id: string;
@@ -107,6 +108,16 @@ export async function POST(request: NextRequest) {
       return jsonErrorResponse('내용을 입력해 주세요.', requestId, { status: 400 });
     }
 
+    if (files.length > 0 && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return jsonErrorResponse(
+        '미디어 업로드 설정이 필요합니다. 관리자에게 문의해 주세요.',
+        requestId,
+        { status: 500 },
+        null,
+        'config'
+      );
+    }
+
     const authorName = admin.username || admin.email || '관리자';
     const supabaseServer = getSupabaseServer();
     const { data: centerInfo } = await supabaseServer
@@ -134,6 +145,15 @@ export async function POST(request: NextRequest) {
     if (files.length > 0) {
       for (const file of files) {
         if (!file || typeof file.arrayBuffer !== 'function') continue;
+        if (typeof (file as any).size === 'number' && (file as any).size > MAX_MEDIA_BYTES) {
+          return jsonErrorResponse(
+            '미디어 파일 용량이 너무 큽니다. 더 작은 사진으로 다시 시도해 주세요.',
+            requestId,
+            { status: 413 },
+            { size: (file as any).size, name: file.name, type: file.type },
+            'media_too_large'
+          );
+        }
         const path = `forum/${admin.center_id}/${post.id}/${crypto.randomUUID()}-${file.name}`;
         const upload = await supabaseServer.storage.from(BUCKET).upload(path, file, {
           contentType: file.type
