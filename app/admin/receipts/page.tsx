@@ -38,6 +38,79 @@ export default function ReceiptsAdminPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null);
   const router = useRouter();
+  const selectedId = selected?.id ?? null;
+
+  const ReceiptDetail = ({ receipt }: { receipt: Receipt }) => (
+    <>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <p className="text-xs text-slate-500">등록일</p>
+          <p className="text-sm">{new Date(receipt.created_at).toLocaleString('ko-KR')}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">차명</p>
+          <p className="text-sm">{receipt.vehicle_name}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">차량번호</p>
+          <p className="text-sm">{receipt.vehicle_number}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">주행거리</p>
+          <p className="text-sm">{receipt.mileage_km} km</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">고객명</p>
+          <p className="text-sm">{receipt.customer_name || '-'}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">전화번호</p>
+          <p className="text-sm">{receipt.phone || '-'}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">구입일자</p>
+          <p className="text-sm">{receipt.purchase_date || '-'}</p>
+        </div>
+        <div className="md:col-span-2">
+          <p className="text-xs text-slate-500">증상</p>
+          <p className="text-sm whitespace-pre-wrap">{receipt.symptom || '-'}</p>
+        </div>
+        <div className="md:col-span-2">
+          <p className="text-xs text-slate-500">정비내용</p>
+          <p className="text-sm whitespace-pre-wrap">{receipt.service_detail || '-'}</p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        {receipt.vin_image_url ? (
+          <button
+            type="button"
+            onClick={() => openImage(receipt.vin_image_url, 'VIN 사진')}
+            className="flex items-center justify-between rounded-lg border border-slate-200 p-3 text-sm hover:border-slate-300"
+          >
+            <span>VIN 사진 크게 보기</span>
+            <span className="text-xs text-slate-400">클릭</span>
+          </button>
+        ) : (
+          <div className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-400">VIN 사진 없음</div>
+        )}
+        {receipt.engine_image_url ? (
+          <button
+            type="button"
+            onClick={() => openImage(receipt.engine_image_url, '엔진번호 사진')}
+            className="flex items-center justify-between rounded-lg border border-slate-200 p-3 text-sm hover:border-slate-300"
+          >
+            <span>엔진번호 사진 크게 보기</span>
+            <span className="text-xs text-slate-400">클릭</span>
+          </button>
+        ) : (
+          <div className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-400">
+            엔진번호 사진 없음
+          </div>
+        )}
+      </div>
+    </>
+  );
 
   useEffect(() => {
     const fetchReceipts = async () => {
@@ -167,82 +240,80 @@ export default function ReceiptsAdminPage() {
         {loading ? (
           <p className="mt-6 text-sm text-slate-500">불러오는 중...</p>
         ) : (
-          <>
-            <div className="mt-6 space-y-3 md:hidden">
-              {filtered.map((receipt) => (
-                <button
-                  key={receipt.id}
-                  type="button"
-                  onClick={() => setSelected(receipt)}
-                  className="w-full rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-semibold">{receipt.customer_name || '고객 미입력'}</p>
-                      <p className="text-xs text-slate-500">
-                        {new Date(receipt.created_at).toLocaleDateString('ko-KR')}
+          <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="min-w-0">
+              {selected && (
+                <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4 md:hidden">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs text-slate-500">선택된 접수</p>
+                      <p className="mt-1 truncate text-sm font-semibold">
+                        {selected.customer_name || '고객 미입력'} · {selected.vehicle_number}
                       </p>
+                      <p className="mt-1 text-xs text-slate-500">{selected.phone || '-'}</p>
                     </div>
-                    <span className="text-xs text-slate-500">{receipt.vehicle_number}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-slate-700">{receipt.vehicle_name}</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-sm">{receipt.phone || '-'}</span>
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/admin/receipts/${receipt.id}/edit`}
-                        onClick={(event) => event.stopPropagation()}
-                        className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 whitespace-nowrap"
-                      >
-                        수정
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          openDeleteConfirm(receipt);
-                        }}
-                        className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600 whitespace-nowrap"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-            <div className="mt-6 hidden overflow-x-auto md:block">
-              <table className="min-w-full border-collapse text-sm">
-                <thead className="border-b border-slate-200 text-left">
-                  <tr>
-                    <th className="py-2 pr-4">등록일</th>
-                    <th className="py-2 pr-4">차명</th>
-                    <th className="py-2 pr-4">차량번호</th>
-                    <th className="py-2 pr-4">고객명</th>
-                    <th className="py-2 pr-4">전화번호</th>
-                    <th className="py-2 pr-4">작업</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((receipt) => (
-                    <tr
-                      key={receipt.id}
-                      className="cursor-pointer border-b border-slate-100 hover:bg-slate-50"
-                      onClick={() => setSelected(receipt)}
+                    <button
+                      type="button"
+                      className="rounded-md border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600"
+                      onClick={() => setSelected(null)}
                     >
-                      <td className="py-2 pr-4">
-                        {new Date(receipt.created_at).toLocaleDateString('ko-KR')}
-                      </td>
-                      <td className="py-2 pr-4">{receipt.vehicle_name}</td>
-                      <td className="py-2 pr-4">{receipt.vehicle_number}</td>
-                      <td className="py-2 pr-4">{receipt.customer_name || '-'}</td>
-                      <td className="py-2 pr-4">{receipt.phone || '-'}</td>
-                      <td className="py-2 pr-4">
+                      닫기
+                    </button>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      href={`/admin/receipts/${selected.id}/edit`}
+                      className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700"
+                    >
+                      수정
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => openDeleteConfirm(selected)}
+                      className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600"
+                    >
+                      삭제
+                    </button>
+                  </div>
+
+                  <details className="mt-3 rounded-lg bg-white p-3">
+                    <summary className="cursor-pointer text-xs text-slate-600">상세 보기</summary>
+                    <div className="mt-3">
+                      <ReceiptDetail receipt={selected} />
+                    </div>
+                  </details>
+                </div>
+              )}
+
+              <div className="space-y-3 md:hidden">
+                {filtered.map((receipt) => {
+                  const isSelected = selectedId === receipt.id;
+                  return (
+                    <button
+                      key={receipt.id}
+                      type="button"
+                      onClick={() => setSelected(receipt)}
+                      className={[
+                        'w-full rounded-lg border bg-white p-4 text-left shadow-sm transition',
+                        isSelected ? 'border-slate-300 ring-2 ring-slate-900/10' : 'border-slate-200'
+                      ].join(' ')}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm font-semibold">{receipt.customer_name || '고객 미입력'}</p>
+                          <p className="text-xs text-slate-500">{new Date(receipt.created_at).toLocaleDateString('ko-KR')}</p>
+                        </div>
+                        <span className="text-xs text-slate-500">{receipt.vehicle_number}</span>
+                      </div>
+                      <p className="mt-2 text-sm text-slate-700">{receipt.vehicle_name}</p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="text-sm">{receipt.phone || '-'}</span>
                         <div className="flex items-center gap-2">
                           <Link
                             href={`/admin/receipts/${receipt.id}/edit`}
                             onClick={(event) => event.stopPropagation()}
-                            className="rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-slate-300 whitespace-nowrap"
+                            className="whitespace-nowrap rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600"
                           >
                             수정
                           </Link>
@@ -252,104 +323,119 @@ export default function ReceiptsAdminPage() {
                               event.stopPropagation();
                               openDeleteConfirm(receipt);
                             }}
-                            className="rounded-md border border-red-200 px-3 py-1 text-xs text-red-600 hover:border-red-300 whitespace-nowrap"
+                            className="whitespace-nowrap rounded-full border border-red-200 px-3 py-1 text-xs text-red-600"
                           >
                             삭제
                           </button>
                         </div>
-                      </td>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="hidden overflow-x-auto md:block">
+                <table className="min-w-full border-collapse text-sm">
+                  <thead className="border-b border-slate-200 text-left">
+                    <tr>
+                      <th className="py-2 pr-4">등록일</th>
+                      <th className="py-2 pr-4">차명</th>
+                      <th className="py-2 pr-4">차량번호</th>
+                      <th className="py-2 pr-4">고객명</th>
+                      <th className="py-2 pr-4">전화번호</th>
+                      <th className="py-2 pr-4">작업</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filtered.map((receipt) => {
+                      const isSelected = selectedId === receipt.id;
+                      return (
+                        <tr
+                          key={receipt.id}
+                          className={[
+                            'cursor-pointer border-b border-slate-100 hover:bg-slate-50',
+                            isSelected ? 'bg-slate-50' : ''
+                          ].join(' ')}
+                          onClick={() => setSelected(receipt)}
+                        >
+                          <td className="py-2 pr-4">{new Date(receipt.created_at).toLocaleDateString('ko-KR')}</td>
+                          <td className="py-2 pr-4">{receipt.vehicle_name}</td>
+                          <td className="py-2 pr-4">{receipt.vehicle_number}</td>
+                          <td className="py-2 pr-4">{receipt.customer_name || '-'}</td>
+                          <td className="py-2 pr-4">{receipt.phone || '-'}</td>
+                          <td className="py-2 pr-4">
+                            <div className="flex items-center gap-2">
+                              <Link
+                                href={`/admin/receipts/${receipt.id}/edit`}
+                                onClick={(event) => event.stopPropagation()}
+                                className="whitespace-nowrap rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-slate-300"
+                              >
+                                수정
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openDeleteConfirm(receipt);
+                                }}
+                                className="whitespace-nowrap rounded-md border border-red-200 px-3 py-1 text-xs text-red-600 hover:border-red-300"
+                              >
+                                삭제
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </>
+
+            <aside className="hidden md:block">
+              <div className="sticky top-24 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-base font-semibold">접수 상세</h3>
+                  {selected && (
+                    <button
+                      type="button"
+                      className="rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-slate-300"
+                      onClick={() => setSelected(null)}
+                    >
+                      닫기
+                    </button>
+                  )}
+                </div>
+
+                {selected ? (
+                  <>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        href={`/admin/receipts/${selected.id}/edit`}
+                        className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white"
+                      >
+                        수정
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => openDeleteConfirm(selected)}
+                        className="rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:border-red-300"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                    <div className="mt-4">
+                      <ReceiptDetail receipt={selected} />
+                    </div>
+                  </>
+                ) : (
+                  <p className="mt-3 text-sm text-slate-500">목록에서 접수 내역을 선택하면 여기에 상세가 표시됩니다.</p>
+                )}
+              </div>
+            </aside>
+          </div>
         )}
       </section>
-
-      {selected && (
-        <section className="rounded-xl bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">접수 상세</h3>
-            <button
-              className="text-sm text-slate-500"
-              onClick={() => setSelected(null)}
-            >
-              닫기
-            </button>
-          </div>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-xs text-slate-500">등록일</p>
-              <p className="text-sm">
-                {new Date(selected.created_at).toLocaleString('ko-KR')}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">차명</p>
-              <p className="text-sm">{selected.vehicle_name}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">차량번호</p>
-              <p className="text-sm">{selected.vehicle_number}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">주행거리</p>
-              <p className="text-sm">{selected.mileage_km} km</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">고객명</p>
-              <p className="text-sm">{selected.customer_name || '-'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">전화번호</p>
-              <p className="text-sm">{selected.phone || '-'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">구입일자</p>
-              <p className="text-sm">{selected.purchase_date || '-'}</p>
-            </div>
-            <div className="md:col-span-2">
-              <p className="text-xs text-slate-500">증상</p>
-              <p className="text-sm">{selected.symptom || '-'}</p>
-            </div>
-            <div className="md:col-span-2">
-              <p className="text-xs text-slate-500">정비내용</p>
-              <p className="text-sm">{selected.service_detail || '-'}</p>
-            </div>
-          </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {selected.vin_image_url ? (
-              <button
-                type="button"
-                onClick={() => openImage(selected.vin_image_url, 'VIN 사진')}
-                className="flex items-center justify-between rounded-lg border border-slate-200 p-3 text-sm hover:border-slate-300"
-              >
-                <span>VIN 사진 크게 보기</span>
-                <span className="text-xs text-slate-400">클릭</span>
-              </button>
-            ) : (
-              <div className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-400">
-                VIN 사진 없음
-              </div>
-            )}
-            {selected.engine_image_url ? (
-              <button
-                type="button"
-                onClick={() => openImage(selected.engine_image_url, '엔진번호 사진')}
-                className="flex items-center justify-between rounded-lg border border-slate-200 p-3 text-sm hover:border-slate-300"
-              >
-                <span>엔진번호 사진 크게 보기</span>
-                <span className="text-xs text-slate-400">클릭</span>
-              </button>
-            ) : (
-              <div className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-400">
-                엔진번호 사진 없음
-              </div>
-            )}
-          </div>
-        </section>
-      )}
       {modalImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"

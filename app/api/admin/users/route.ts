@@ -47,6 +47,8 @@ export async function POST(request: NextRequest) {
   const email = typeof body.email === 'string' ? body.email.trim() : '';
   const username = typeof body.username === 'string' ? body.username.trim() : '';
   const password = typeof body.password === 'string' ? body.password : '';
+  const requestedCenterId = typeof body.center_id === 'string' ? body.center_id.trim() : '';
+  const centerId = requestedCenterId || admin.center_id;
 
   if (!email && !username) {
     return jsonErrorResponse('이메일 또는 사용자명이 필요합니다.', requestId, { status: 400 });
@@ -64,7 +66,7 @@ export async function POST(request: NextRequest) {
       email: email || null,
       username: username || null,
       password_hash: passwordHash,
-      center_id: admin.center_id,
+      center_id: centerId,
       is_active: true,
       is_superadmin: false
     })

@@ -33,10 +33,12 @@ export default function AdminUsersPage() {
   const [formEmail, setFormEmail] = useState('');
   const [formUsername, setFormUsername] = useState('');
   const [formPassword, setFormPassword] = useState('');
+  const [formCenterId, setFormCenterId] = useState('');
   const [saving, setSaving] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [centerFilter, setCenterFilter] = useState('');
+  const [meId, setMeId] = useState<string | null>(null);
 
   const centerOptions = useMemo(() => centers, [centers]);
 
@@ -48,8 +50,10 @@ export default function AdminUsersPage() {
       }
       const result = await response.json().catch(() => ({}));
       setIsSuperAdmin(Boolean(result.data?.is_superadmin));
+      setMeId(typeof result.data?.id === 'string' ? result.data.id : null);
     } catch (err) {
       setIsSuperAdmin(false);
+      setMeId(null);
     }
   }, []);
 
@@ -113,6 +117,12 @@ export default function AdminUsersPage() {
     loadData(isSuperAdmin);
   }, [isSuperAdmin, loadData]);
 
+  useEffect(() => {
+    if (!formCenterId && centers.length > 0) {
+      setFormCenterId(centers[0].id);
+    }
+  }, [centers, formCenterId]);
+
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
@@ -128,7 +138,8 @@ export default function AdminUsersPage() {
           body: JSON.stringify({
             email: formEmail,
             username: formUsername,
-            password: formPassword
+            password: formPassword,
+            center_id: formCenterId || undefined
           }),
           credentials: 'include'
         },
@@ -219,9 +230,18 @@ export default function AdminUsersPage() {
   };
 
   const handleToggleSuperAdmin = async (userId: string, nextValue: boolean) => {
+    if (meId && userId === meId) {
+      window.alert('본인 계정의 관리자 권한은 변경할 수 없습니다.');
+      return;
+    }
+
     setActionId(userId);
     setError(null);
     setRequestId(null);
+
+    // Optimistic update: controlled checkbox won't visually toggle otherwise.
+    const snapshot = users;
+    setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, is_superadmin: nextValue } : user)));
 
     try {
       const response = await fetchWithTimeout(
@@ -236,6 +256,7 @@ export default function AdminUsersPage() {
       );
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
+        setUsers(snapshot);
         setError(result.error || result.message || '권한 변경에 실패했습니다.');
         setRequestId(result.requestId || null);
         return;
@@ -243,6 +264,7 @@ export default function AdminUsersPage() {
 
       setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, ...result.data } : user)));
     } catch (err) {
+      setUsers(snapshot);
       setError('권한 변경에 실패했습니다.');
     } finally {
       setActionId(null);
@@ -307,8 +329,14 @@ export default function AdminUsersPage() {
           </label>
           <label className="flex flex-col gap-1 text-sm">
             {strings.adminUsers.center}
-            <select className="h-11 rounded-md border border-slate-200 px-3" disabled>
-              {centers.length === 0 && <option>불러오는 중...</option>}
+            <select
+              className="h-11 rounded-md border border-slate-200 px-3 disabled:bg-slate-50"
+              value={formCenterId}
+              onChange={(event) => setFormCenterId(event.target.value)}
+              disabled={!isSuperAdmin || centers.length === 0 || saving}
+              required
+            >
+              {centers.length === 0 && <option value="">불러오는 중...</option>}
               {centers.map((center) => (
                 <option key={center.id} value={center.id}>
                   {center.name} ({center.code})
@@ -336,6 +364,12 @@ export default function AdminUsersPage() {
 
       <section className="rounded-xl bg-white p-6 shadow-sm">
         <h3 className="text-base font-semibold">{strings.adminUsers.listTitle}</h3>
+        {error && (
+          <p className="mt-3 text-xs text-red-500">
+            {error}
+            {requestId && <span className="ml-2">requestId: {requestId}</span>}
+          </p>
+        )}
         {loading ? (
           <p className="mt-4 text-sm text-slate-500">{strings.common.loading}</p>
         ) : (
@@ -351,6 +385,7 @@ export default function AdminUsersPage() {
                         type="checkbox"
                         checked={Boolean(user.is_superadmin)}
                         onChange={(event) => handleToggleSuperAdmin(user.id, event.target.checked)}
+                        disabled={actionId === user.id || (meId ? user.id === meId : false)}
                       />
                       {strings.adminUsers.adminToggle}
                     </label>
@@ -400,6 +435,7 @@ export default function AdminUsersPage() {
                           type="checkbox"
                           checked={Boolean(user.is_superadmin)}
                           onChange={(event) => handleToggleSuperAdmin(user.id, event.target.checked)}
+                          disabled={actionId === user.id || (meId ? user.id === meId : false)}
                         />
                       </td>
                       <td className="py-2 pr-4">
