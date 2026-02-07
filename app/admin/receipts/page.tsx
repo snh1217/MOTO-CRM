@@ -126,6 +126,16 @@ export default function ReceiptsAdminPage() {
     fetchReceipts();
   }, [router]);
 
+  // Mobile UX: when bottom-sheet is open, prevent background scrolling.
+  useEffect(() => {
+    if (!selected) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [selected]);
+
   const filtered = useMemo(() => {
     if (!query) return receipts;
     const q = query.toLowerCase();
@@ -242,50 +252,6 @@ export default function ReceiptsAdminPage() {
         ) : (
           <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_420px]">
             <div className="min-w-0">
-              {selected && (
-                <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4 md:hidden">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs text-slate-500">선택된 접수</p>
-                      <p className="mt-1 truncate text-sm font-semibold">
-                        {selected.customer_name || '고객 미입력'} · {selected.vehicle_number}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">{selected.phone || '-'}</p>
-                    </div>
-                    <button
-                      type="button"
-                      className="rounded-md border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600"
-                      onClick={() => setSelected(null)}
-                    >
-                      닫기
-                    </button>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Link
-                      href={`/admin/receipts/${selected.id}/edit`}
-                      className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700"
-                    >
-                      수정
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => openDeleteConfirm(selected)}
-                      className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs text-red-600"
-                    >
-                      삭제
-                    </button>
-                  </div>
-
-                  <details className="mt-3 rounded-lg bg-white p-3">
-                    <summary className="cursor-pointer text-xs text-slate-600">상세 보기</summary>
-                    <div className="mt-3">
-                      <ReceiptDetail receipt={selected} />
-                    </div>
-                  </details>
-                </div>
-              )}
-
               <div className="space-y-3 md:hidden">
                 {filtered.map((receipt) => {
                   const isSelected = selectedId === receipt.id;
@@ -328,6 +294,10 @@ export default function ReceiptsAdminPage() {
                             삭제
                           </button>
                         </div>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
+                        <span>상세 보기</span>
+                        <span aria-hidden="true">›</span>
                       </div>
                     </button>
                   );
@@ -436,6 +406,65 @@ export default function ReceiptsAdminPage() {
           </div>
         )}
       </section>
+
+      {selected && (
+        <div className="md:hidden">
+          <div className="fixed inset-0 z-50 bg-black/40" role="presentation" onClick={() => setSelected(null)} />
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[88vh] overflow-auto rounded-t-2xl bg-white p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200" />
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs text-slate-500">접수 상세</p>
+                <p className="mt-1 truncate text-base font-semibold">
+                  {selected.customer_name || '고객 미입력'} · {selected.vehicle_number}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">{selected.phone || '-'}</p>
+              </div>
+              <button
+                type="button"
+                className="rounded-md border border-slate-200 px-3 py-1 text-xs text-slate-600"
+                onClick={() => setSelected(null)}
+              >
+                닫기
+              </button>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                href={`/admin/receipts/${selected.id}/edit`}
+                className="rounded-md bg-slate-900 px-3 py-1.5 text-xs text-white"
+              >
+                수정
+              </Link>
+              <button
+                type="button"
+                onClick={() => openDeleteConfirm(selected)}
+                className="rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-600"
+              >
+                삭제
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <ReceiptDetail receipt={selected} />
+            </div>
+
+            <button
+              type="button"
+              className="mt-5 w-full rounded-md border border-slate-200 bg-white py-2 text-sm text-slate-700"
+              onClick={() => setSelected(null)}
+            >
+              목록으로 돌아가기
+            </button>
+          </div>
+        </div>
+      )}
+
       {modalImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
