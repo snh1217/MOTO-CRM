@@ -21,13 +21,16 @@ try {
     Write-Host "Using Docker for Vercel build (Linux)..." -ForegroundColor Cyan
     $project = (Get-Location).Path
     # Use a named volume so host node_modules is not modified and repeat builds are faster.
+    $bashCmd = ("npm ci && npm i -g vercel@{0} --no-audit --no-fund && " +
+      "vercel pull --yes --environment=preview --token `$VERCEL_TOKEN && " +
+      "vercel build --yes --token `$VERCEL_TOKEN") -f $vercelVersion
     docker run --rm `
       -e VERCEL_TOKEN=$env:VERCEL_TOKEN `
       -v "${project}:/app" `
       -v "moto-crm_vercel_node_modules:/app/node_modules" `
       -w /app `
       node:24-bullseye `
-      bash -lc "npm ci && npm i -g vercel@${vercelVersion} --no-audit --no-fund && vercel pull --yes --environment=preview --token $VERCEL_TOKEN && vercel build --yes --token $VERCEL_TOKEN"
+      bash -lc "$bashCmd"
     exit 0
   }
 
