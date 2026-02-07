@@ -28,6 +28,10 @@ const initialState = {
 
 type SubmitStage = 'idle' | 'vin' | 'engine' | 'db' | 'done' | 'error';
 
+const MAX_IMAGE_BYTES = 1_800_000; // Keep total multipart body under common serverless limits.
+const MAX_IMAGE_DIMENSION = 1600;
+const JPEG_QUALITIES = [0.82, 0.72, 0.62, 0.52];
+
 export default function AsReceiptForm() {
   const [form, setForm] = useState(initialState);
   const [brand, setBrand] = useState<Brand>('ZT');
@@ -93,6 +97,109 @@ export default function AsReceiptForm() {
   const addLog = (stage: string, messageText: string) => {
     const time = new Date().toLocaleTimeString('ko-KR');
     setLogs((prev) => [...prev, { time, stage, message: messageText }].slice(-30));
+  };
+
+  const formatBytes = (value: number) => {
+    if (!Number.isFinite(value)) return '-';
+    if (value < 1024) return `${value} B`;
+    if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+    return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const compressImageFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      throw new Error('이미지 파일만 업로드할 수 있습니다.');
+    }
+
+    // If it's already small, keep original to avoid surprises.
+    if (
+      file.size <= MAX_IMAGE_BYTES &&
+      (file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp')
+    ) {
+      return file;
+    }
+
+    let bitmap: ImageBitmap;
+    try {
+      bitmap = await createImageBitmap(file);
+    } catch {
+      throw new Error('지원되지 않는 이미지 형식입니다. JPG/PNG로 다시 시도해 주세요.');
+    }
+
+    try {
+      const srcW = bitmap.width;
+      const srcH = bitmap.height;
+      const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(srcW, srcH));
+      const dstW = Math.max(1, Math.round(srcW * scale));
+      const dstH = Math.max(1, Math.round(srcH * scale));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = dstW;
+      canvas.height = dstH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('이미지 처리에 실패했습니다.');
+      ctx.drawImage(bitmap, 0, 0, dstW, dstH);
+
+      const toBlob = (quality: number) =>
+        new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) reject(new Error('이미지 변환에 실패했습니다.'));
+              else resolve(blob);
+            },
+            'image/jpeg',
+            quality
+          );
+        });
+
+      let blob = await toBlob(JPEG_QUALITIES[0]);
+      for (const q of JPEG_QUALITIES) {
+        blob = await toBlob(q);
+        if (blob.size <= MAX_IMAGE_BYTES) break;
+      }
+
+      if (blob.size > MAX_IMAGE_BYTES) {
+        const scale2 = Math.min(1, 1200 / Math.max(srcW, srcH));
+        const w2 = Math.max(1, Math.round(srcW * scale2));
+        const h2 = Math.max(1, Math.round(srcH * scale2));
+        canvas.width = w2;
+        canvas.height = h2;
+        ctx.drawImage(bitmap, 0, 0, w2, h2);
+        for (const q of [0.72, 0.62, 0.52]) {
+          blob = await toBlob(q);
+          if (blob.size <= MAX_IMAGE_BYTES) break;
+        }
+      }
+
+      if (blob.size > MAX_IMAGE_BYTES) {
+        throw new Error('이미지 용량이 너무 큽니다. 더 작은 사진으로 다시 시도해 주세요.');
+      }
+
+      const safeName = (file.name || 'photo')
+        .replace(/\.[^./\\]+$/g, '')
+        .replace(/[^\w.-]+/g, '_')
+        .slice(0, 80);
+      return new File([blob], `${safeName}.jpg`, { type: 'image/jpeg' });
+    } finally {
+      bitmap.close();
+    }
+  };
+
+  const prepareAndSetImage = async (file: File, setter: (f: File | null) => void, label: string) => {
+    try {
+      const before = file.size;
+      const next = await compressImageFile(file);
+      setter(next);
+      if (next.size !== before || next.type !== file.type) {
+        addLog('image', `${label} 압축: ${formatBytes(before)} → ${formatBytes(next.size)}`);
+      }
+    } catch (error) {
+      setter(null);
+      setSubmitStage('error');
+      setMessage(error instanceof Error ? error.message : '이미지 처리 중 오류가 발생했습니다.');
+      setShowRetry(false);
+      addLog('image', `${label} 처리 실패`);
+    }
   };
 
   const updateField = (key: keyof typeof initialState, value: string) => {
@@ -169,19 +276,30 @@ export default function AsReceiptForm() {
         body: payload
       });
 
-      const result = await response.json().catch(() => ({}));
-      setRequestId(result.requestId || null);
+      const rawText = await response.text().catch(() => '');
+      const result = (() => {
+        try {
+          return rawText ? JSON.parse(rawText) : {};
+        } catch {
+          return {};
+        }
+      })();
+      setRequestId((result as any).requestId || null);
 
       if (!response.ok) {
         setSubmitStage('error');
-        setMessage(result.error || result.message || strings.as.submitFailed);
+        if (response.status === 413) {
+          setMessage('사진 용량이 너무 커서 업로드할 수 없습니다. 더 작은 사진으로 다시 시도해 주세요.');
+        } else {
+          setMessage((result as any).error || (result as any).message || strings.as.submitFailed);
+        }
         setErrorDetails({
-          requestId: result.requestId,
+          requestId: (result as any).requestId,
           status: response.status,
-          body: result
+          body: rawText ? result : {}
         });
         setShowRetry(true);
-        addLog('error', `요청 실패: ${result.error || result.message}`);
+        addLog('error', `요청 실패: ${(result as any).error || (result as any).message || response.status}`);
         return;
       }
 
@@ -217,7 +335,7 @@ export default function AsReceiptForm() {
       event.preventDefault();
       const file = event.dataTransfer.files?.[0] ?? null;
       if (file) {
-        setter(file);
+        void prepareAndSetImage(file, setter, setter === setVinImage ? 'VIN' : '엔진번호');
       }
     };
 
@@ -490,7 +608,11 @@ export default function AsReceiptForm() {
                 type="file"
                 accept="image/*"
                 capture="environment"
-                onChange={(event) => setVinImage(event.target.files?.[0] ?? null)}
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  if (file) void prepareAndSetImage(file, setVinImage, 'VIN');
+                  else setVinImage(null);
+                }}
                 className="text-xs"
               />
               {vinPreviewUrl && (
@@ -512,7 +634,9 @@ export default function AsReceiptForm() {
                   재촬영/재선택
                 </button>
               )}
-              <p className="text-xs text-slate-500">{vinImage ? vinImage.name : '선택된 파일 없음'}</p>
+              <p className="text-xs text-slate-500">
+                {vinImage ? `${vinImage.name} (${formatBytes(vinImage.size)})` : '선택된 파일 없음'}
+              </p>
             </div>
             <div
               className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4"
@@ -525,7 +649,11 @@ export default function AsReceiptForm() {
                 type="file"
                 accept="image/*"
                 capture="environment"
-                onChange={(event) => setEngineImage(event.target.files?.[0] ?? null)}
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  if (file) void prepareAndSetImage(file, setEngineImage, '엔진번호');
+                  else setEngineImage(null);
+                }}
                 className="text-xs"
               />
               {enginePreviewUrl && (
@@ -548,7 +676,7 @@ export default function AsReceiptForm() {
                 </button>
               )}
               <p className="text-xs text-slate-500">
-                {engineImage ? engineImage.name : '선택된 파일 없음'}
+                {engineImage ? `${engineImage.name} (${formatBytes(engineImage.size)})` : '선택된 파일 없음'}
               </p>
             </div>
           </div>
